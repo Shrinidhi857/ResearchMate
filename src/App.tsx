@@ -1,10 +1,6 @@
-import NavigationMenuDemo from "./Navbar";
+import NavigationMenuDemo from "./Layouts/Navbar";
 function App() {
-  return (
-    <>
-      <NavigationMenuDemo />
-    </>
-  );
+  return <NavigationMenuDemo />;
 }
 
 export default App;

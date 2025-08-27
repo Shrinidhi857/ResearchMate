@@ -1,6 +1,5 @@
 import React from "react";
 import type { ReactNode } from "react";
-
 import { CircleCheckIcon, CircleHelpIcon, CircleIcon } from "lucide-react";
 
 import {
@@ -12,8 +11,8 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { ThemeToggle } from "../components/theme/theme-toggle.tsx";
 
-// ✅ Type for ListItem props
 type ListItemProps = {
   title: string;
   href: string;
@@ -59,24 +58,10 @@ export function NavigationMenuDemo() {
   return (
     <NavigationMenu viewport={false}>
       <NavigationMenuList>
-        {/* Home Menu */}
         <NavigationMenuItem>
           <NavigationMenuTrigger>Home</NavigationMenuTrigger>
           <NavigationMenuContent>
             <ul className="grid gap-2 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-              <li className="row-span-3">
-                <NavigationMenuLink asChild>
-                  <a
-                    href="#"
-                    className="from-muted/50 to-muted flex h-full w-full flex-col justify-end rounded-md bg-linear-to-b p-6 no-underline outline-hidden select-none focus:shadow-md"
-                  >
-                    <div className="mt-4 mb-2 text-lg font-medium">Demo UI</div>
-                    <p className="text-muted-foreground text-sm leading-tight">
-                      Beautifully designed components for demonstration.
-                    </p>
-                  </a>
-                </NavigationMenuLink>
-              </li>
               <ListItem href="#" title="Introduction">
                 Reusable components using React and Tailwind CSS.
               </ListItem>
@@ -90,7 +75,6 @@ export function NavigationMenuDemo() {
           </NavigationMenuContent>
         </NavigationMenuItem>
 
-        {/* Components Menu */}
         <NavigationMenuItem>
           <NavigationMenuTrigger>Components</NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -108,7 +92,6 @@ export function NavigationMenuDemo() {
           </NavigationMenuContent>
         </NavigationMenuItem>
 
-        {/* Docs Link */}
         <NavigationMenuItem>
           <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
             <a href="#">Docs</a>
@@ -197,6 +180,10 @@ export function NavigationMenuDemo() {
               </li>
             </ul>
           </NavigationMenuContent>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <ThemeToggle />
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
