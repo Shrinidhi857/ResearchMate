@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+const API_URL = import.meta.env.SERVER_API_URL; // Base URL from .env file
+
 import {
   Card,
   CardContent,
@@ -70,6 +72,7 @@ const AuthSystem = () => {
     return password.length >= 8;
   };
 
+  //Validate Login form
   const validateLoginForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -87,6 +90,7 @@ const AuthSystem = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  //Validate Register Form
   const validateRegisterForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -142,14 +146,41 @@ const AuthSystem = () => {
     setSuccess("");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: loginData.email,
+          password: loginData.password,
+        }),
+      });
 
-      setSuccess("Login successful! Welcome back.");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid credentials");
+      }
+
+      // ✅ Success
+      setSuccess(data.message || "Login successful! Welcome back.");
+
+      // Reset form
       setLoginData({ email: "", password: "" });
+
+      // Store JWT token if available
+      if (data.token) {
+        localStorage.setItem("authToken", data.token);
+      }
+
+      // Optionally store user info
+      if (data.user) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      }
     } catch {
       setLoginErrors({
-        general: "Invalid credentials. Please check your email and password.",
+        general: "Login failed. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -164,9 +195,26 @@ const AuthSystem = () => {
     setSuccess("");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2500));
+      // Call your backend API
+      const response = await fetch(`${API_URL}/api/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: registerData.name,
+          email: registerData.email,
+          password: registerData.password,
+        }),
+      });
 
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Registration failed");
+      }
+
+      // ✅ Success
       setSuccess("Account created successfully! You can now sign in.");
       setRegisterData({
         name: "",
@@ -175,7 +223,7 @@ const AuthSystem = () => {
         confirmPassword: "",
       });
 
-      // Switch to login tab after successful registration
+      // Switch to login tab after a delay
       setTimeout(() => {
         setActiveTab("login");
         setSuccess(
@@ -184,7 +232,7 @@ const AuthSystem = () => {
       }, 2000);
     } catch {
       setRegisterErrors({
-        general: "Registration failed. This email might already be in use.",
+        general: "Registration failed. Try again.",
       });
     } finally {
       setIsLoading(false);
@@ -198,17 +246,8 @@ const AuthSystem = () => {
     setSuccess("");
 
     try {
-      // Simulate Google OAuth
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setSuccess("Google authentication successful! Welcome to your account.");
-      setLoginData({ email: "", password: "" });
-      setRegisterData({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-      });
+      // Redirect user to Google OAuth backend route
+      window.location.href = `${API_URL}/auth/google`;
     } catch {
       const errorMsg = "Google authentication failed. Please try again.";
       if (activeTab === "login") {
@@ -224,24 +263,24 @@ const AuthSystem = () => {
   const currentErrors = activeTab === "login" ? loginErrors : registerErrors;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="shadow-lg border bg-card text-card-foreground">
           <CardHeader className="space-y-1 text-center pb-6">
-            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mb-4">
-              <Lock className="h-6 w-6 text-white" />
+            <div className="mx-auto w-12 h-12 rounded-full bg-primary flex items-center justify-center mb-4">
+              <Lock className="h-6 w-6 text-primary-foreground" />
             </div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Welcome
+            <CardTitle className="text-2xl font-semibold">
+              Research Mate
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription>
               Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6">
             {success && (
-              <Alert className="border-green-200 bg-green-50">
+              <Alert variant="default" className="border-green-200 bg-green-50">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 <AlertDescription className="text-green-800">
                   {success}
@@ -250,11 +289,9 @@ const AuthSystem = () => {
             )}
 
             {currentErrors.general && (
-              <Alert className="border-red-200 bg-red-50">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800">
-                  {currentErrors.general}
-                </AlertDescription>
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{currentErrors.general}</AlertDescription>
               </Alert>
             )}
 
@@ -264,42 +301,27 @@ const AuthSystem = () => {
               className="w-full"
             >
               <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login" className="font-medium">
-                  Sign In
-                </TabsTrigger>
-                <TabsTrigger value="register" className="font-medium">
-                  Sign Up
-                </TabsTrigger>
+                <TabsTrigger value="login">Sign In</TabsTrigger>
+                <TabsTrigger value="register">Sign Up</TabsTrigger>
               </TabsList>
 
+              {/* --- Login Form --- */}
               <TabsContent value="login" className="space-y-4">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="login-email"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Email Address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={loginData.email}
-                      onChange={(e) =>
-                        handleLoginInputChange("email", e.target.value)
-                      }
-                      className={`pl-10 ${
-                        loginErrors.email
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }`}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                  </div>
+                  <Label htmlFor="login-email">Email Address</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={loginData.email}
+                    onChange={(e) =>
+                      handleLoginInputChange("email", e.target.value)
+                    }
+                    className={loginErrors.email ? "border-destructive" : ""}
+                    disabled={isLoading || isGoogleLoading}
+                  />
                   {loginErrors.email && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {loginErrors.email}
                     </p>
@@ -307,14 +329,8 @@ const AuthSystem = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="login-password"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Password
-                  </Label>
+                  <Label htmlFor="login-password">Password</Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="login-password"
                       type={showPassword ? "text" : "password"}
@@ -323,18 +339,16 @@ const AuthSystem = () => {
                       onChange={(e) =>
                         handleLoginInputChange("password", e.target.value)
                       }
-                      className={`pl-10 pr-10 ${
-                        loginErrors.password
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }`}
+                      className={
+                        loginErrors.password ? "border-destructive" : ""
+                      }
                       disabled={isLoading || isGoogleLoading}
                     />
                     <Button
                       type="button"
                       variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-8 w-8 px-0"
+                      size="icon"
+                      className="absolute right-1 top-1 h-8 w-8"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading || isGoogleLoading}
                     >
@@ -346,7 +360,7 @@ const AuthSystem = () => {
                     </Button>
                   </div>
                   {loginErrors.password && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {loginErrors.password}
                     </p>
@@ -355,57 +369,36 @@ const AuthSystem = () => {
 
                 <Button
                   onClick={handleLogin}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-2.5"
+                  className="w-full"
                   disabled={isLoading || isGoogleLoading}
                 >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Signing In...</span>
-                    </div>
-                  ) : (
-                    "Sign In"
-                  )}
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </Button>
 
                 <div className="text-center">
-                  <Button
-                    variant="link"
-                    className="text-sm text-purple-600 hover:text-purple-800 p-0"
-                  >
+                  <Button variant="link" className="text-sm">
                     Forgot your password?
                   </Button>
                 </div>
               </TabsContent>
 
+              {/* --- Register Form --- */}
               <TabsContent value="register" className="space-y-4">
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="register-name"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Full Name
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="register-name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={registerData.name || ""}
-                      onChange={(e) =>
-                        handleRegisterInputChange("name", e.target.value)
-                      }
-                      className={`pl-10 ${
-                        registerErrors.name
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }`}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                  </div>
+                  <Label htmlFor="register-name">Full Name</Label>
+                  <Input
+                    id="register-name"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={registerData.name || ""}
+                    onChange={(e) =>
+                      handleRegisterInputChange("name", e.target.value)
+                    }
+                    className={registerErrors.name ? "border-destructive" : ""}
+                    disabled={isLoading || isGoogleLoading}
+                  />
                   {registerErrors.name && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {registerErrors.name}
                     </p>
@@ -413,32 +406,20 @@ const AuthSystem = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="register-email"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Email Address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="register-email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={registerData.email}
-                      onChange={(e) =>
-                        handleRegisterInputChange("email", e.target.value)
-                      }
-                      className={`pl-10 ${
-                        registerErrors.email
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }`}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                  </div>
+                  <Label htmlFor="register-email">Email Address</Label>
+                  <Input
+                    id="register-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={registerData.email}
+                    onChange={(e) =>
+                      handleRegisterInputChange("email", e.target.value)
+                    }
+                    className={registerErrors.email ? "border-destructive" : ""}
+                    disabled={isLoading || isGoogleLoading}
+                  />
                   {registerErrors.email && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {registerErrors.email}
                     </p>
@@ -446,46 +427,22 @@ const AuthSystem = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="register-password"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="register-password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Create a password"
-                      value={registerData.password}
-                      onChange={(e) =>
-                        handleRegisterInputChange("password", e.target.value)
-                      }
-                      className={`pl-10 pr-10 ${
-                        registerErrors.password
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }`}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-8 w-8 px-0"
-                      onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading || isGoogleLoading}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <Label htmlFor="register-password">Password</Label>
+                  <Input
+                    id="register-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create a password"
+                    value={registerData.password}
+                    onChange={(e) =>
+                      handleRegisterInputChange("password", e.target.value)
+                    }
+                    className={
+                      registerErrors.password ? "border-destructive" : ""
+                    }
+                    disabled={isLoading || isGoogleLoading}
+                  />
                   {registerErrors.password && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {registerErrors.password}
                     </p>
@@ -493,51 +450,27 @@ const AuthSystem = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label
-                    htmlFor="register-confirm-password"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="register-confirm-password">
                     Confirm Password
                   </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      id="register-confirm-password"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm your password"
-                      value={registerData.confirmPassword || ""}
-                      onChange={(e) =>
-                        handleRegisterInputChange(
-                          "confirmPassword",
-                          e.target.value
-                        )
-                      }
-                      className={`pl-10 pr-10 ${
-                        registerErrors.confirmPassword
-                          ? "border-red-500 focus-visible:ring-red-500"
-                          : ""
-                      }`}
-                      disabled={isLoading || isGoogleLoading}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-8 w-8 px-0"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      disabled={isLoading || isGoogleLoading}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
+                  <Input
+                    id="register-confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm your password"
+                    value={registerData.confirmPassword || ""}
+                    onChange={(e) =>
+                      handleRegisterInputChange(
+                        "confirmPassword",
+                        e.target.value
+                      )
+                    }
+                    className={
+                      registerErrors.confirmPassword ? "border-destructive" : ""
+                    }
+                    disabled={isLoading || isGoogleLoading}
+                  />
                   {registerErrors.confirmPassword && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
+                    <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
                       {registerErrors.confirmPassword}
                     </p>
@@ -546,17 +479,10 @@ const AuthSystem = () => {
 
                 <Button
                   onClick={handleRegister}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-medium py-2.5"
+                  className="w-full"
                   disabled={isLoading || isGoogleLoading}
                 >
-                  {isLoading ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Creating Account...</span>
-                    </div>
-                  ) : (
-                    "Create Account"
-                  )}
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </TabsContent>
             </Tabs>
@@ -566,7 +492,7 @@ const AuthSystem = () => {
                 <Separator className="w-full" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500 font-medium">
+                <span className="bg-card px-2 text-muted-foreground">
                   Or continue with
                 </span>
               </div>
@@ -574,38 +500,23 @@ const AuthSystem = () => {
 
             <Button
               variant="outline"
-              className="w-full border-2 border-gray-200 hover:bg-gray-50 py-2.5"
+              className="w-full"
               onClick={handleGoogleAuth}
               disabled={isLoading || isGoogleLoading}
             >
-              {isGoogleLoading ? (
-                <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Connecting...</span>
-                </div>
-              ) : (
-                <>
-                  <Chrome className="mr-2 h-5 w-5 text-red-500" />
-                  Continue with Google
-                </>
-              )}
+              <Chrome className="mr-2 h-5 w-5" />
+              Continue with Google
             </Button>
           </CardContent>
 
           <CardFooter className="text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               By continuing, you agree to our{" "}
-              <Button
-                variant="link"
-                className="text-purple-600 hover:text-purple-800 p-0 h-auto font-medium"
-              >
+              <Button variant="link" className="p-0 h-auto font-medium">
                 Terms of Service
               </Button>{" "}
               and{" "}
-              <Button
-                variant="link"
-                className="text-purple-600 hover:text-purple-800 p-0 h-auto font-medium"
-              >
+              <Button variant="link" className="p-0 h-auto font-medium">
                 Privacy Policy
               </Button>
             </p>
