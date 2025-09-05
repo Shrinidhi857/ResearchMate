@@ -10,75 +10,9 @@ import NavigationMenuDemo from "./Layouts/Navbar";
 import { Card } from "./components/ui/card";
 import SearchCard from "./Layouts/searchform";
 import * as React from "react";
+import DocumentAnalysisCard from "@/Layouts/docbar";
 // Sample messages - replace with your actual message data
-const messages = [
-  {
-    id: 1,
-    text: "Hey! How are you doing today?",
-    isOutgoing: false,
-    timestamp: "10:30 AM",
-  },
-  {
-    id: 2,
-    text: "I'm doing great! Just working on some React components. How about you?",
-    isOutgoing: true,
-    timestamp: "10:32 AM",
-  },
-  {
-    id: 3,
-    text: "That sounds awesome! I'm learning about chat interfaces myself.",
-    isOutgoing: false,
-    timestamp: "10:33 AM",
-  },
-  {
-    id: 4,
-    text: "Nice! Chat apps are really fun to build. The real-time aspect makes them feel so interactive.",
-    isOutgoing: true,
-    timestamp: "10:35 AM",
-  },
-  {
-    id: 5,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: false,
-    timestamp: "10:36 AM",
-  },
-  {
-    id: 6,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: false,
-    timestamp: "10:36 AM",
-  },
-  {
-    id: 7,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: false,
-    timestamp: "10:36 AM",
-  },
-  {
-    id: 8,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: true,
-    timestamp: "10:36 AM",
-  },
-  {
-    id: 9,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: true,
-    timestamp: "10:36 AM",
-  },
-  {
-    id: 10,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: true,
-    timestamp: "10:36 AM",
-  },
-  {
-    id: 11,
-    text: "Absolutely! The user experience is so important in chat applications.",
-    isOutgoing: true,
-    timestamp: "10:36 AM",
-  },
-];
+const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
 const MessageBubble = ({ message }) => {
   return (
@@ -95,24 +29,56 @@ const MessageBubble = ({ message }) => {
         }`}
       >
         <p className="text-sm">{message.text}</p>
-        <p className="text-xs mt-1 opacity-70">{message.timestamp}</p>
       </div>
     </div>
   );
 };
 
+// ChatPage.tsx
 export default function ChatPage() {
-  // NOTE: I've added a unique key for each message to fix the duplicate key warning.
-  const uniqueMessages = messages.map((msg, index) => ({
-    ...msg,
-    id: index + 1,
-  }));
+  const [messages, setMessages] = React.useState<
+    { id: number; text: string; isOutgoing: boolean }[]
+  >([]);
+  const [showAnalysis, setShowAnalysis] = React.useState(true);
+  const [analysis, setAnalysis] = React.useState(false);
+
+  // helper: add new message
+  const addMessage = (text: string, isOutgoing: boolean) => {
+    setMessages((prev) => [...prev, { id: prev.length + 1, text, isOutgoing }]);
+  };
+
+  // handle user prompt + fetch
+  const handleUserPrompt = async (question: string) => {
+    // Add user prompt bubble
+    addMessage(question, true);
+
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/ask`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch response");
+      const data = await response.json();
+
+      // Add bot response bubble
+      addMessage(data.answer || "⚠️ No response found", false);
+    } catch (error) {
+      console.error("Error fetching answer:", error);
+      addMessage("⚠️ Error fetching response", false);
+    }
+  };
 
   return (
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        {/* I've added shadow-md and bg-background here */}
+        {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-10 shadow-md">
           <SidebarTrigger className="-ml-1" />
           <Separator
@@ -122,15 +88,34 @@ export default function ChatPage() {
           <NavigationMenuDemo />
         </header>
 
-        <ScrollArea className="flex-1 p-4 pb-32 ">
+        {/* Messages */}
+        <ScrollArea className="flex-1 p-4 pb-32">
           <div className="space-y-2">
-            {uniqueMessages.map((message) => (
+            {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
           </div>
         </ScrollArea>
-        <div className="absolute bottom-4 left-4 right-4 sticky bottom-0 z-10">
-          <SearchCard />
+
+        {/* Input + Analysis */}
+        <div className="absolute left-4 right-4 sticky bottom-0 z-10">
+          {showAnalysis && (
+            <div className="flex justify-center">
+              <DocumentAnalysisCard
+                showAnalysis={showAnalysis}
+                setShowAnalysis={setShowAnalysis}
+                analysis={analysis}
+                setAnalysis={setAnalysis}
+              />
+            </div>
+          )}
+          <SearchCard
+            showAnalysis={showAnalysis}
+            setShowAnalysis={setShowAnalysis}
+            analysis={analysis}
+            setAnalysis={setAnalysis}
+            onPrompt={handleUserPrompt} // ✅ pass callback
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -21,8 +21,9 @@ const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
 interface User {
   id: number;
-  name: string | null;
   email: string;
+  first_name: string | null;
+  last_name: string | null;
 }
 
 // Menu items.
@@ -93,12 +94,12 @@ export function AppSidebar() {
           <Avatar>
             <AvatarImage src={tiger} alt="@user" />
             <AvatarFallback>
-              {user?.name ? user.name[0].toUpperCase() : "U"}
+              {user?.first_name ? user.first_name[0].toUpperCase() : "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
             <span className="text-sm font-medium">
-              {user?.name || "Unknown User"}
+              {user?.first_name || "Unknown"} {user?.last_name || "User"}
             </span>
             <span className="text-xs text-muted-foreground">
               {user?.email || "No email"}
@@ -109,6 +110,10 @@ export function AppSidebar() {
             size="icon"
             className="ml-auto"
             aria-label="Logout"
+            onClick={() => {
+              localStorage.removeItem("authToken");
+              window.location.href = "/login";
+            }}
           >
             <LogOut className="h-4 w-4" />
           </Button>

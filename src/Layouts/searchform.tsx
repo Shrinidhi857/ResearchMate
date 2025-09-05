@@ -1,14 +1,31 @@
 import React, { useState } from "react";
-import { Send, Paperclip, Mic, Square, X } from "lucide-react";
+import { Send, Paperclip, Mic, Square } from "lucide-react";
+import checked from "@/assets/checked.png";
+const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
-const SearchCard: React.FC = () => {
+// ✅ Accept showAnalysis + setShowAnalysis as props
+interface SearchCardProps {
+  showAnalysis: boolean;
+  setShowAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+  analysis: boolean;
+  setAnalysis: React.Dispatch<React.SetStateAction<boolean>>;
+  onPrompt: (question: string) => void; // ✅ new
+}
+
+const SearchCard: React.FC<SearchCardProps> = ({
+  showAnalysis,
+  setShowAnalysis,
+  analysis,
+  setAnalysis,
+  onPrompt,
+}) => {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
 
   const handleSubmit = () => {
     if (message.trim()) {
-      console.log("Sending message:", message);
+      onPrompt(message.trim()); // ✅ send prompt up
       setMessage("");
       setAttachedFiles([]);
     }
@@ -19,15 +36,6 @@ const SearchCard: React.FC = () => {
       e.preventDefault();
       handleSubmit();
     }
-  };
-
-  const handleAttachment = () => {
-    const fileName = `document_${Date.now()}.pdf`;
-    setAttachedFiles([...attachedFiles, fileName]);
-  };
-
-  const removeAttachment = (index: number) => {
-    setAttachedFiles(attachedFiles.filter((_, i) => i !== index));
   };
 
   const toggleRecording = () => {
@@ -45,27 +53,6 @@ const SearchCard: React.FC = () => {
     <div className="w-full max-w-3xl mx-auto p-2">
       <div className="bg-card text-card-foreground rounded-xl border border-border shadow-sm">
         <div className="p-4 space-y-3">
-          {/* File Attachments */}
-          {attachedFiles.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {attachedFiles.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2 text-sm"
-                >
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-foreground">{file}</span>
-                  <button
-                    onClick={() => removeAttachment(index)}
-                    className="text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Input Container */}
           <div className="relative">
             <textarea
@@ -81,10 +68,18 @@ const SearchCard: React.FC = () => {
             {/* Action Buttons */}
             <div className="absolute bottom-2 right-2 flex items-center gap-1">
               <button
-                onClick={handleAttachment}
+                onClick={() => setShowAnalysis(!showAnalysis)}
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
               >
-                <Paperclip className="h-4 w-4" />
+                {analysis ? (
+                  <img
+                    src={checked}
+                    alt="checked"
+                    className="h-5 w-5 rounded-2xl"
+                  />
+                ) : (
+                  <Paperclip className="h-4 w-4" />
+                )}
               </button>
 
               <button

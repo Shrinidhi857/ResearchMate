@@ -27,14 +27,16 @@ import {
 } from "lucide-react";
 
 interface FormData {
-  name?: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
   password: string;
   confirmPassword?: string;
 }
 
 interface FormErrors {
-  name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
@@ -55,7 +57,8 @@ const AuthSystem = () => {
   });
 
   const [registerData, setRegisterData] = useState<FormData>({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -94,10 +97,15 @@ const AuthSystem = () => {
   const validateRegisterForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!registerData.name?.trim()) {
-      newErrors.name = "Full name is required";
-    } else if (registerData.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters long";
+    if (!registerData.first_name?.trim()) {
+      newErrors.first_name = "First  name is required";
+    } else if (registerData.first_name.trim().length < 2) {
+      newErrors.first_name = "Name must be at least 2 characters long";
+    }
+    if (!registerData.last_name?.trim()) {
+      newErrors.last_name = "last name is required";
+    } else if (registerData.last_name.trim().length == 0) {
+      newErrors.last_name = "last must be valid";
     }
 
     if (!registerData.email) {
@@ -138,92 +146,72 @@ const AuthSystem = () => {
     setSuccess("");
   };
 
-  const handleLogin = async () => {
-    if (!validateLoginForm()) return;
-
-    setIsLoading(true);
-    setLoginErrors({});
-    setSuccess("");
-
+  const handleLogin = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/login`, {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: loginData.email,
-          password: loginData.password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Invalid credentials");
+        throw new Error(data.error || "Login failed");
       }
 
-      // ✅ Success
-      setSuccess(data.message || "Login successful! Welcome back.");
+      const authToken = data.token; // ✅ backend sends "token"
+      const user = data.user; // ✅ backend sends "user" object
 
-      // Reset form
-      setLoginData({ email: "", password: "" });
-
-      // Store JWT token if available
-      if (data.token) {
-        localStorage.setItem("authToken", data.token);
+      if (authToken) {
+        localStorage.setItem("authToken", authToken);
+        localStorage.setItem("user", JSON.stringify(user));
       }
 
-      // Optionally store user info
-      if (data.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-      }
-    } catch {
-      setLoginErrors({
-        general: "Login failed. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
+      return { token: authToken, user };
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
   };
 
   const handleRegister = async () => {
     if (!validateRegisterForm()) return;
-
     setIsLoading(true);
     setRegisterErrors({});
     setSuccess("");
 
     try {
-      // Call your backend API
-      const response = await fetch(`${API_URL}/api/register`, {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        // ✅ use /auth/register
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: registerData.name,
+          first_name: registerData.first_name, // ✅ snake_case for backend
+          last_name: registerData.last_name,
           email: registerData.email,
           password: registerData.password,
         }),
       });
 
       const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Registration failed");
 
-      if (!response.ok) {
-        throw new Error(result.message || "Registration failed");
-      }
+      // Use result directly, don’t call response.json() again
+      localStorage.setItem("authToken", result.token);
+      window.location.href = "/";
 
-      // ✅ Success
       setSuccess("Account created successfully! You can now sign in.");
       setRegisterData({
-        name: "",
+        first_name: "",
+        last_name: "",
         email: "",
         password: "",
         confirmPassword: "",
       });
 
-      // Switch to login tab after a delay
       setTimeout(() => {
         setActiveTab("login");
         setSuccess(
@@ -231,9 +219,7 @@ const AuthSystem = () => {
         );
       }, 2000);
     } catch {
-      setRegisterErrors({
-        general: "Registration failed. Try again.",
-      });
+      setRegisterErrors({ general: "Registration failed. Try again." });
     } finally {
       setIsLoading(false);
     }
@@ -352,7 +338,7 @@ const AuthSystem = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isLoading || isGoogleLoading}
                     >
-                      {showPassword ? (
+                      {!showPassword ? (
                         <EyeOff className="h-4 w-4" />
                       ) : (
                         <Eye className="h-4 w-4" />
@@ -368,7 +354,20 @@ const AuthSystem = () => {
                 </div>
 
                 <Button
-                  onClick={handleLogin}
+                  onClick={() => {
+                    if (!validateLoginForm()) return;
+                    setIsLoading(true);
+                    handleLogin(loginData.email, loginData.password)
+                      .then(({ token, user }) => {
+                        localStorage.setItem("authToken", token);
+                        localStorage.setItem("user", JSON.stringify(user));
+                        setSuccess("Login successful!");
+                      })
+                      .catch((err) => {
+                        setLoginErrors({ general: err.message });
+                      })
+                      .finally(() => setIsLoading(false));
+                  }}
                   className="w-full"
                   disabled={isLoading || isGoogleLoading}
                 >
@@ -385,22 +384,46 @@ const AuthSystem = () => {
               {/* --- Register Form --- */}
               <TabsContent value="register" className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-name">Full Name</Label>
+                  <Label htmlFor="register-name">First Name</Label>
+                  <Input
+                    id="register-first_name"
+                    type="text"
+                    placeholder="Enter your first name"
+                    value={registerData.first_name || ""}
+                    onChange={(e) =>
+                      handleRegisterInputChange("first_name", e.target.value)
+                    }
+                    className={
+                      registerErrors.first_name ? "border-destructive" : ""
+                    }
+                    disabled={isLoading || isGoogleLoading}
+                  />
+                  {registerErrors.first_name && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {registerErrors.first_name}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="register-first_last">Last Name</Label>
                   <Input
                     id="register-name"
                     type="text"
-                    placeholder="Enter your full name"
-                    value={registerData.name || ""}
+                    placeholder="Enter your last name"
+                    value={registerData.last_name || ""}
                     onChange={(e) =>
-                      handleRegisterInputChange("name", e.target.value)
+                      handleRegisterInputChange("last_name", e.target.value)
                     }
-                    className={registerErrors.name ? "border-destructive" : ""}
+                    className={
+                      registerErrors.last_name ? "border-destructive" : ""
+                    }
                     disabled={isLoading || isGoogleLoading}
                   />
-                  {registerErrors.name && (
+                  {registerErrors.last_name && (
                     <p className="text-sm text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      {registerErrors.name}
+                      {registerErrors.last_name}
                     </p>
                   )}
                 </div>
