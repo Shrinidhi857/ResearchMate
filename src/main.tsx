@@ -9,6 +9,7 @@ import GoogleSuccess from "./auth/google";
 
 function RootApp() {
   const token = localStorage.getItem("authToken");
+  console.log(token);
   return token ? <App /> : <AuthSystem />;
 }
 

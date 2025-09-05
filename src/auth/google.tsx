@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
-const GoogleSuccess = () => {
+const GoogleSuccess: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    const token: string | null = searchParams.get("token");
     if (token) {
-      localStorage.setItem("jwtToken", token);
+      localStorage.setItem("authToken", token);
       navigate("/"); // redirect user after login
     } else {
       navigate("/login");

@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { renderAsync } from "docx-preview";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Tell pdfjs where to find its worker
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min?url";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
 interface DocumentData {
   file: File;
@@ -90,21 +98,69 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     setError("");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate API call
+      const token = localStorage.getItem("authToken");
 
-      onSave?.({
-        file: selectedFile,
-        name: documentName.trim(),
+      // Extract text from file before sending
+      const extractedText = await extractTextFromFile(selectedFile);
+
+      const response = await fetch(`${API_URL}/api/documents`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: documentName.trim(),
+          content: extractedText,
+        }),
       });
 
-      // Reset form after successful save
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to save document");
+      }
+
+      alert(`✅ Document "${documentName}" uploaded successfully`);
       setSelectedFile(null);
       setDocumentName("");
-    } catch {
-      setError("Failed to save document. Please try again.");
+    } catch (err: any) {
+      console.error(err);
+      alert(`❌ ${err.message || "Failed to save document"}`);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    const extension = file.name.split(".").pop()?.toLowerCase();
+
+    if (extension === "txt") {
+      return await file.text();
+    }
+
+    if (extension === "pdf") {
+      const pdfjsLib = await import("pdfjs-dist");
+      const pdf = await pdfjsLib.getDocument(await file.arrayBuffer()).promise;
+      let text = "";
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((item: any) => item.str).join(" ") + "\n";
+      }
+      return text;
+    }
+
+    // For DOC/DOCX you can use "mammoth"
+    if (extension === "docx") {
+      const buffer = await file.arrayBuffer();
+      const textContainer = document.createElement("div");
+      await renderAsync(buffer, textContainer);
+
+      return textContainer.innerText; // plain text
+    }
+
+    return "";
   };
 
   const formatFileSize = (bytes: number): string => {

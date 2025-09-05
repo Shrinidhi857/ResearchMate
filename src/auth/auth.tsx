@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-const API_URL = import.meta.env.SERVER_API_URL; // Base URL from .env file
+const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
 import {
   Card,
