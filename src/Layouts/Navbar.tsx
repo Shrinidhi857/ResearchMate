@@ -8,7 +8,7 @@ import { ThemeToggle } from "../components/theme/theme-toggle";
 
 export function NavigationMenuDemo() {
   return (
-    <NavigationMenu viewport={false} className="w-full border-b">
+    <NavigationMenu viewport={false} className="w-full border-b z-20 ">
       <NavigationMenuList className="flex w-full items-center px-4">
         {/* Left side: App title */}
         <NavigationMenuItem>

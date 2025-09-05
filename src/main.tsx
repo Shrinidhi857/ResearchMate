@@ -6,6 +6,7 @@ import { ThemeProvider } from "./components/theme/theme-provider";
 import AuthSystem from "./auth/auth";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import GoogleSuccess from "./auth/google";
+import ChatPage from "./CharPage";
 
 function RootApp() {
   const token = localStorage.getItem("authToken");
@@ -20,6 +21,7 @@ createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/auth/success" element={<GoogleSuccess />} />
           <Route path="/*" element={<RootApp />} />
+          <Route path="/chat" element={<ChatPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

@@ -28,8 +28,8 @@ interface User {
 // Menu items.
 const items = [
   { title: "Search", url: "#", icon: Search },
-  { title: "Home", url: "#", icon: Home },
-  { title: "Inbox", url: "#", icon: Inbox },
+  { title: "Home", url: "/", icon: Home },
+  { title: "Inbox", url: "/chat", icon: Inbox },
 ];
 
 export function AppSidebar() {
