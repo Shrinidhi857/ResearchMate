@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
+import logo from "@/assets/logo.png";
+import google from "@/assets/google.png";
 
 import {
   Card,
@@ -252,10 +254,8 @@ const AuthSystem = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-lg border bg-card text-card-foreground">
-          <CardHeader className="space-y-1 text-center pb-6">
-            <div className="mx-auto w-12 h-12 rounded-full bg-primary flex items-center justify-center mb-4">
-              <Lock className="h-6 w-6 text-primary-foreground" />
-            </div>
+          <CardHeader className="space-y-1 text-center pb-6 flex flex-col justify-center items-center">
+            <img src={logo} className="h-8 w-8 rounded-2xl" />
             <CardTitle className="text-2xl font-semibold">
               Research Mate
             </CardTitle>
@@ -527,7 +527,7 @@ const AuthSystem = () => {
               onClick={handleGoogleAuth}
               disabled={isLoading || isGoogleLoading}
             >
-              <Chrome className="mr-2 h-5 w-5" />
+              <img src={google} className="mr-2 h-5 w-5" />
               Continue with Google
             </Button>
           </CardContent>

@@ -14,6 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import logo from "@/assets/logo.png";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,10 @@ export function AppSidebar() {
       <SidebarContent className="flex flex-col">
         {/* Top section */}
         <SidebarGroup>
-          <SidebarHeader>Research Mate</SidebarHeader>
+          <SidebarHeader className="flex flex-row gap-1  items-center">
+            <img src={logo} className="w-6 h-6 rounded-2xl" />
+            Research Mate
+          </SidebarHeader>
           <SidebarGroupLabel>Application</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
