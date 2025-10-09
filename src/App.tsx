@@ -9,6 +9,8 @@ import NavigationMenuDemo from "./Layouts/Navbar";
 import DocumentUpload from "./Layouts/FileUpload";
 import { ChartLineInteractive } from "./Layouts/Chart";
 import AnalyseCard from "./Layouts/AnalyseGreetCard";
+import AskaiCard from "./Layouts/AskaiCard";
+import Lot from "./Layouts/test";
 
 export default function App() {
   return (
@@ -38,8 +40,10 @@ export default function App() {
             </div>
 
             {/* Second row: Single full-width card */}
-            <div className="w-full">
+            <div className="grid grid-col gap-6 w-full">
               <AnalyseCard />
+              <AskaiCard />
+              <Lot />
             </div>
           </div>
         </div>

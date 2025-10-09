@@ -9,6 +9,8 @@ import GoogleSuccess from "./auth/google";
 import ChatPage from "./CharPage";
 import axios from "axios";
 import ResearchMateDashboard from "./Dashboard";
+import "@dotlottie/player-component";
+import AnalysisPage from "./AnalysisPage";
 
 function RootApp() {
   const token = localStorage.getItem("authToken");
@@ -36,6 +38,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/auth/success" element={<GoogleSuccess />} />
           <Route path="/*" element={<RootApp />} />
           <Route path="/chat" element={<ChatPage />} />
+          <Route path="/analysis" element={<AnalysisPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

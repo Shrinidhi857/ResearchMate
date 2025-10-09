@@ -32,6 +32,7 @@ const items = [
   { title: "Search", url: "#", icon: Search },
   { title: "Home", url: "/", icon: Home },
   { title: "Inbox", url: "/chat", icon: Inbox },
+  { title: "Analysis", url: "/analysis", icon: Inbox },
 ];
 
 export function AppSidebar() {
