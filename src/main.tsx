@@ -1,16 +1,16 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App";
+import App from "./pages/App";
 import { ThemeProvider } from "./components/theme/theme-provider";
 import AuthSystem from "./auth/auth";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import GoogleSuccess from "./auth/google";
-import ChatPage from "./CharPage";
+import ChatPage from "./pages/ChatPage";
 import axios from "axios";
-import ResearchMateDashboard from "./Dashboard";
+import ResearchMateDashboard from "./pages/Dashboard";
 import "@dotlottie/player-component";
-import AnalysisPage from "./AnalysisPage";
+import AnalysisPage from "./pages/AnalysisPage";
 
 function RootApp() {
   const token = localStorage.getItem("authToken");

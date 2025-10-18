@@ -6,35 +6,13 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import NavigationMenuDemo from "./Layouts/Navbar";
-import { Card } from "./components/ui/card";
-import SearchCard from "./Layouts/searchform";
+import NavigationBar from "../Layouts/Navbar";
+import { Card } from "../components/ui/card";
+import SearchCard from "../Layouts/searchform";
 import * as React from "react";
 import DocumentAnalysisCard from "@/Layouts/docbar";
-import { AIResponseCard } from "./Layouts/Highlightsheet";
-
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
-const sampleResponse = `Based on the research papers you've uploaded, here are the key findings:
-
-1. **Main Research Gap**: The current literature shows a significant gap in understanding the long-term effects of AI-assisted learning in educational environments. While short-term studies (3-6 months) show positive results, there's limited data on retention and skill development over 12+ months.
-
-2. **Methodological Limitations**: 
-   - Small sample sizes (n<100) in 78% of reviewed studies
-   - Lack of diverse demographic representation
-   - Limited cross-cultural validation
-
-3. **Contradictions Identified**:
-   - Study A (2023) reports 45% improvement in learning outcomes
-   - Study B (2023) reports only 12% improvement with similar methodologies
-   - Possible confounding variables: instructor experience, technology infrastructure
-
-4. **Future Research Directions**:
-   - Longitudinal studies spanning multiple academic years
-   - Mixed-methods approaches combining quantitative and qualitative data
-   - Investigation of individual learning style interactions with AI tools
-
-These insights suggest that while AI-assisted learning shows promise, more rigorous and long-term research is needed to establish best practices and understand the full impact on educational outcomes.`;
 
 const MessageBubble = ({ message }) => {
   return (
@@ -57,7 +35,7 @@ const MessageBubble = ({ message }) => {
 };
 
 // ChatPage.tsx
-export default function AnalysisPage() {
+export default function ChatPage() {
   const [messages, setMessages] = React.useState<
     { id: number; text: string; isOutgoing: boolean }[]
   >([]);
@@ -107,7 +85,7 @@ export default function AnalysisPage() {
             orientation="vertical"
             className="mr-2 data-[orientation=vertical]:h-4"
           />
-          <NavigationMenuDemo />
+          <NavigationBar />
         </header>
 
         {/* Messages */}
@@ -117,16 +95,12 @@ export default function AnalysisPage() {
               <MessageBubble key={message.id} message={message} />
             ))}
           </div>
-          <AIResponseCard
-            heading="Research Analysis Summary"
-            description={sampleResponse}
-          />
         </ScrollArea>
 
         {/* Input + Analysis */}
-        <div className="absolute left-4 right-4 sticky bottom-10 z-10">
+        <div className="absolute left-4 right-4 sticky bottom-0 z-10">
           {showAnalysis && (
-            <div className="flex justify-center ">
+            <div className="flex justify-center">
               <DocumentAnalysisCard
                 showAnalysis={showAnalysis}
                 setShowAnalysis={setShowAnalysis}
@@ -135,13 +109,13 @@ export default function AnalysisPage() {
               />
             </div>
           )}
-          {/* <SearchCard
+          <SearchCard
             showAnalysis={showAnalysis}
             setShowAnalysis={setShowAnalysis}
             analysis={analysis}
             setAnalysis={setAnalysis}
             onPrompt={handleUserPrompt} // ✅ pass callback
-          /> */}
+          />
         </div>
       </SidebarInset>
     </SidebarProvider>

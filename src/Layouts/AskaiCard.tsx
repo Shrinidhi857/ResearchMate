@@ -8,7 +8,7 @@ export default function AskaiCard() {
           Ask AI with RAG Intelligence
         </CardTitle>
       </CardHeader>
-      <CardContent className="text-left text-xl text-muted-foreground">
+      <CardContent className="text-left text-xl text-forground">
         Upload your research papers, and let our RAG-powered AI combine
         retrieval and generation to deliver precise, context-aware answers. It
         searches your uploaded documents in real-time to give fact-grounded,

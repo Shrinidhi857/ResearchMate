@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
-import { Home, Inbox, Search, LogOut } from "lucide-react";
-import { ScrollAreaDemo } from "@/components/Responsehistory";
+import {
+  Home,
+  Inbox,
+  Search,
+  LogOut,
+  Rocket,
+  MessageCircle,
+} from "lucide-react";
+import { DocumentList } from "./DocumentList";
 import tiger from "@/assets/tiger.png";
 import {
   Sidebar,
@@ -31,8 +38,8 @@ interface User {
 const items = [
   { title: "Search", url: "#", icon: Search },
   { title: "Home", url: "/", icon: Home },
-  { title: "Inbox", url: "/chat", icon: Inbox },
-  { title: "Analysis", url: "/analysis", icon: Inbox },
+  { title: "RAG Chat", url: "/chat", icon: MessageCircle },
+  { title: "NLP Analysis", url: "/analysis", icon: Rocket },
 ];
 
 export function AppSidebar() {
@@ -88,8 +95,10 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Middle area */}
-        <div className="flex-1 overflow-y-auto m-2">
-          <ScrollAreaDemo />
+        <h4 className="m-4 text-sm leading-none font-medium">Documents</h4>
+
+        <div className="flex-1 overflow-y-auto m-2 scrollbar-hide">
+          <DocumentList />
         </div>
       </SidebarContent>
 

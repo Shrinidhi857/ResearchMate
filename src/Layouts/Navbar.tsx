@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/navigation-menu";
 import { ThemeToggle } from "../components/theme/theme-toggle";
 
-export function NavigationMenuDemo() {
+export function NavigationBar() {
   return (
     <NavigationMenu viewport={false} className="w-full border-b z-20 ">
       <NavigationMenuList className="flex w-full items-center px-4">
@@ -27,4 +27,4 @@ export function NavigationMenuDemo() {
   );
 }
 
-export default NavigationMenuDemo;
+export default NavigationBar;

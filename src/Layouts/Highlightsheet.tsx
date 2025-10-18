@@ -31,7 +31,7 @@ export const AIResponseCard: React.FC<AIResponseCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-3xl">
+    <Card className="w-full max-w-3xl m-10">
       <CardHeader className="relative pb-3">
         <div className="pr-12">
           <CardTitle className="text-xl font-semibold mb-2">
@@ -52,7 +52,7 @@ export const AIResponseCard: React.FC<AIResponseCardProps> = ({
         </Button>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-base leading-relaxed whitespace-pre-wrap">
+        <CardDescription className="text-forground leading-relaxed whitespace-pre-wrap">
           {description}
         </CardDescription>
       </CardContent>

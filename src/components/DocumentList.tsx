@@ -25,8 +25,10 @@ interface DocumentSummary {
   title: string;
 }
 
-export function ScrollAreaDemo() {
-  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+export function DocumentList() {
+  const [documents, setDocuments] = useState<DocumentSummary[]>([
+    { doc_id: "hello", title: "hello" },
+  ]);
   const [selectedDocContent, setSelectedDocContent] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -86,10 +88,8 @@ export function ScrollAreaDemo() {
 
   return (
     <>
-      <ScrollArea className="h-100 w-full rounded-md border">
-        <div className="p-4">
-          <h4 className="mb-4 text-sm leading-none font-medium">Documents</h4>
-
+      <ScrollArea className="h-100 w-full rounded-md border  ">
+        <div className="p-4 ">
           {documents.map((doc) => (
             <React.Fragment key={doc.doc_id}>
               <DropdownMenu>
@@ -107,6 +107,9 @@ export function ScrollAreaDemo() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleDelete(doc.doc_id)}>
                     Delete
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleDelete(doc.doc_id)}>
+                    Copy
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
