@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Home,
-  Inbox,
-  Search,
-  LogOut,
-  Rocket,
-  MessageCircle,
-} from "lucide-react";
+import { Home, Search, LogOut, Rocket, MessageCircle } from "lucide-react";
 import { DocumentList } from "./DocumentList";
 import tiger from "@/assets/tiger.png";
 import {

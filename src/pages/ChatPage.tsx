@@ -10,7 +10,7 @@ import NavigationBar from "../Layouts/Navbar";
 import { Card } from "../components/ui/card";
 import SearchCard from "../Layouts/searchform";
 import * as React from "react";
-import DocumentAnalysisCard from "@/Layouts/docbar";
+import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 

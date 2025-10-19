@@ -9,8 +9,8 @@ import NavigationBar from "../Layouts/Navbar";
 import DocumentUpload from "../Layouts/FileUpload";
 import { ChartLineInteractive } from "../Layouts/Chart";
 import ResponseHistory from "../Layouts/ResponseHistory";
-import AskaiCard from "../Layouts/AskaiCard";
-import AnalyseAnimation from "../animation/Analyse";
+/* import AskaiCard from "../Layouts/AskaiCard";
+import AnalyseAnimation from "../animation/Analyse"; */
 import ProjectsCard from "../Layouts/RecentProjects";
 import HorizontalRoundedCard from "../Layouts/HorizontalCard";
 

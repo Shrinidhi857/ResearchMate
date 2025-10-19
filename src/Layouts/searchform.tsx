@@ -16,8 +16,8 @@ const SearchCard: React.FC<SearchCardProps> = ({
   showAnalysis,
   setShowAnalysis,
   analysis,
-  setAnalysis,
-  onPrompt,
+  /*   setAnalysis,
+   */ onPrompt,
 }) => {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);

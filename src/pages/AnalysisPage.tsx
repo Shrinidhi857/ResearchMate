@@ -7,12 +7,12 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import NavigationMenuDemo from "../Layouts/Navbar";
-import { Card } from "../components/ui/card";
+//import { Card } from "../components/ui/card";
 import SearchCard from "../Layouts/searchform";
 import * as React from "react";
 import AnalyseAnimation from "../animation/Analyse";
-import DocumentAnalysisCard from "@/Layouts/docbar";
-import { AIResponseCard } from "../Layouts/Highlightsheet";
+import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
+//import { AIResponseCard } from "../Layouts/Highlightsheet";
 
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
@@ -97,6 +97,113 @@ export default function AnalysisPage() {
     }
   };
 
+  /* const handleSubmitAnalysis = async (selectedDocuments) => {
+    try {
+      const token = localStorage.getItem("authToken");
+
+      // Create a new EventSource to stream from backend
+      const eventSource = new EventSource(`${API_URL}/api/test`, {
+        withCredentials: false,
+      });
+
+      setAnalysis(true);
+      setShowAnalysis(false);
+
+      // Send selectedDocuments as a POST request (we can’t send body via EventSource directly)
+      // So, create a fetch POST first to trigger backend processing
+      await fetch(`${API_URL}/api/test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(selectedDocuments),
+      });
+
+      // Now, listen to SSE messages
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("📩 Stream update:", data);
+
+        // Display updates as they arrive
+        if (data.phase === "error") {
+          addMessage(`❌ Error: ${data.error}`, false);
+          eventSource.close();
+        } else if (data.status === "start") {
+          addMessage(`🟡 ${data.message}`, false);
+        } else if (data.status === "done") {
+          addMessage(`✅ Phase ${data.phase} done`, false);
+        } else if (data.status === "complete") {
+          addMessage(`🎉 ${data.message}`, false);
+          eventSource.close();
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.error("SSE error:", err);
+        addMessage("⚠️ Stream connection lost.", false);
+        eventSource.close();
+      };
+    } catch (error) {
+      console.error("Analysis error:", error);
+      addMessage("⚠️ Failed to start analysis.", false);
+      setAnalysis(false);
+    }
+  }; */
+
+  const handleSubmitAnalysis = async (selectedDocuments) => {
+    try {
+      const token = localStorage.getItem("authToken");
+
+      const response = await fetch(`${API_URL}/api/nlp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(selectedDocuments),
+      });
+
+      if (!response.body) {
+        console.error("Streaming not supported");
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk
+          .split("\n\n")
+          .filter((line) => line.startsWith("data:"));
+
+        for (const line of lines) {
+          const data = JSON.parse(line.replace("data: ", ""));
+          console.log("📩", data);
+
+          if (data.status === "start") {
+            addMessage(`🟡 ${data.message}`, false);
+          } else if (data.status === "running") {
+            addMessage(`🔄 ${data.message}`, false);
+          } else if (data.status === "done") {
+            addMessage(`✅ Phase ${data.phase} done`, false);
+          } else if (data.status === "complete") {
+            addMessage(`🎉 ${data.message}`, false);
+          } else if (data.phase === "error") {
+            addMessage(`❌ ${data.error}`, false);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      addMessage("⚠️ Streaming error.", false);
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -112,17 +219,15 @@ export default function AnalysisPage() {
         </header>
 
         {/* Messages */}
-        {!analysis ? (
-          <AnalyseAnimation />
-        ) : (
-          <ScrollArea className="flex-1 p-4 pb-32">
-            <div className="space-y-2">
-              {messages.map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-            </div>
-          </ScrollArea>
-        )}
+        {analysis && <AnalyseAnimation />}
+
+        <ScrollArea className="flex-1 p-4 pb-32">
+          <div className="space-y-2">
+            {messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))}
+          </div>
+        </ScrollArea>
 
         {/* Input + Analysis */}
         <div className="absolute   left-4 right-4 sticky bottom-10 z-10">
@@ -133,6 +238,7 @@ export default function AnalysisPage() {
                 setShowAnalysis={setShowAnalysis}
                 analysis={analysis}
                 setAnalysis={setAnalysis}
+                handleSubmit={handleSubmitAnalysis}
               />
             </div>
           )}
