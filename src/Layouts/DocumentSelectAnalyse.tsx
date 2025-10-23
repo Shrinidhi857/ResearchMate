@@ -133,7 +133,7 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
   };
 
   return (
-    <Card className="w-full max-w-3xl py-2">
+    <Card className="max-w-3xl py-2">
       <CardHeader>
         <CardTitle>Document Analysis</CardTitle>
         <CardDescription>

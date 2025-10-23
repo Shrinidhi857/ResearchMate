@@ -13,9 +13,12 @@ import * as React from "react";
 import AnalyseAnimation from "../animation/Analyse";
 import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
 //import { AIResponseCard } from "../Layouts/Highlightsheet";
+import AnimatedGradientProgressBar from "../Layouts/Progressbar";
+import { useState, useEffect } from "react";
 
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
+
 const sampleResponse = `Based on the research papers you've uploaded, here are the key findings:
 
 1. **Main Research Gap**: The current literature shows a significant gap in understanding the long-term effects of AI-assisted learning in educational environments. While short-term studies (3-6 months) show positive results, there's limited data on retention and skill development over 12+ months.
@@ -62,6 +65,8 @@ export default function AnalysisPage() {
   const [messages, setMessages] = React.useState<
     { id: number; text: string; isOutgoing: boolean }[]
   >([]);
+  const [progress1, setProgress1] = useState(0);
+
   const [showAnalysis, setShowAnalysis] = React.useState(true);
   const [analysis, setAnalysis] = React.useState(false);
 
@@ -151,10 +156,21 @@ export default function AnalysisPage() {
     }
   }; */
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setProgress1((prev) => {
+        if (prev >= 100) return 0;
+        return prev + 0.5;
+      });
+    }, 30);
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSubmitAnalysis = async (selectedDocuments) => {
     try {
       const token = localStorage.getItem("authToken");
 
+      // Step 1: Start analysis and get session ID
       const response = await fetch(`${API_URL}/api/nlp`, {
         method: "POST",
         headers: {
@@ -164,43 +180,55 @@ export default function AnalysisPage() {
         body: JSON.stringify(selectedDocuments),
       });
 
-      if (!response.body) {
-        console.error("Streaming not supported");
-        return;
-      }
+      if (!response.ok) throw new Error("Failed to start analysis");
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const { session_id } = await response.json();
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      setAnalysis(true);
+      setShowAnalysis(false);
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk
-          .split("\n\n")
-          .filter((line) => line.startsWith("data:"));
+      // Step 2: Connect to SSE stream with session ID
+      const eventSource = new EventSource(
+        `${API_URL}/api/nlp/stream/${session_id}?token=${token}`
+      );
 
-        for (const line of lines) {
-          const data = JSON.parse(line.replace("data: ", ""));
-          console.log("📩", data);
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("📩 Received:", data);
 
-          if (data.status === "start") {
-            addMessage(`🟡 ${data.message}`, false);
-          } else if (data.status === "running") {
-            addMessage(`🔄 ${data.message}`, false);
-          } else if (data.status === "done") {
-            addMessage(`✅ Phase ${data.phase} done`, false);
-          } else if (data.status === "complete") {
-            addMessage(`🎉 ${data.message}`, false);
-          } else if (data.phase === "error") {
-            addMessage(`❌ ${data.error}`, false);
-          }
+        if (data.phase === "error") {
+          addMessage(`❌ Error: ${data.error}`, false);
+          eventSource.close();
+          setAnalysis(false);
+        } else if (data.status === "start") {
+          addMessage(`🟡 ${data.message}`, false);
+        } else if (data.status === "processing") {
+          addMessage(`🔄 ${data.message}`, false);
+        } else if (data.status === "done") {
+          addMessage(`✅ ${data.message}`, false);
+          eventSource.close();
+          setAnalysis(false);
+        } else if (data.sentence) {
+          addMessage(
+            `📝 ${data.predicted_label}: "${data.sentence.substring(
+              0,
+              60
+            )}..." (${(data.confidence * 100).toFixed(1)}%)`,
+            false
+          );
         }
-      }
-    } catch (err) {
-      console.error("Error:", err);
-      addMessage("⚠️ Streaming error.", false);
+      };
+
+      eventSource.onerror = (error) => {
+        console.error("SSE Error:", error);
+        addMessage("⚠️ Stream connection lost", false);
+        eventSource.close();
+        setAnalysis(false);
+      };
+    } catch (error) {
+      console.error("Analysis error:", error);
+      addMessage("⚠️ Failed to start analysis", false);
+      setAnalysis(false);
     }
   };
 
@@ -242,6 +270,7 @@ export default function AnalysisPage() {
               />
             </div>
           )}
+          {<AnimatedGradientProgressBar progress={progress1} height={10} />}
 
           <SearchCard
             showAnalysis={showAnalysis}
