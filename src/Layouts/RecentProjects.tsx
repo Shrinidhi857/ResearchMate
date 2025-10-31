@@ -4,52 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function ProjectsCard() {
   const projects = [
     {
-      id: 1,
-      name: "E-commerce Platform",
-      status: "active",
-      timestamp: "2 hours ago",
-    },
-    {
-      id: 2,
-      name: "Mobile App Redesign",
-      status: "active",
-      timestamp: "5 hours ago",
-    },
-    {
       id: 3,
-      name: "Dashboard Analytics",
+      name: "Visualization of Research Gaps in Climate Studies",
       status: "completed",
-      timestamp: "1 day ago",
-    },
-    {
-      id: 4,
-      name: "API Integration",
-      status: "active",
       timestamp: "2 days ago",
     },
     {
-      id: 5,
-      name: "Marketing Website",
-      status: "pending",
-      timestamp: "3 days ago",
-    },
-    {
-      id: 6,
-      name: "User Authentication",
-      status: "completed",
-      timestamp: "1 week ago",
-    },
-    {
-      id: 7,
-      name: "Payment Gateway",
+      id: 4,
+      name: "Automated Hypothesis Generation from Biomedical Data",
       status: "active",
-      timestamp: "1 week ago",
+      timestamp: "1 hour ago",
     },
     {
-      id: 8,
-      name: "Cloud Migration",
-      status: "pending",
-      timestamp: "2 weeks ago",
+      id: 5,
+      name: "Knowledge Graphs for Cross-Disciplinary Research",
+      status: "completed",
+      timestamp: "3 days ago",
     },
   ];
 

@@ -15,7 +15,8 @@ import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
 //import { AIResponseCard } from "../Layouts/Highlightsheet";
 import AnimatedGradientProgressBar from "../Layouts/Progressbar";
 import { useState, useEffect } from "react";
-
+import { AIResponseCard } from "@/Layouts/Highlightsheet";
+import ProgressBarCard from "@/Layouts/Document-progres";
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
@@ -250,10 +251,17 @@ export default function AnalysisPage() {
         {analysis && <AnalyseAnimation />}
 
         <ScrollArea className="flex-1 p-4 pb-32">
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col items-center">
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
+
+            <div className="flex flex-col items-center gap-4 mt-6 w-full">
+              <ProgressBarCard title="AI Research Paper" progress={75} />
+              <ProgressBarCard title="Business Proposal" progress={40} />
+              <ProgressBarCard title="Security Report" progress={100} />
+              <AIResponseCard heading="hello" description={sampleResponse} />
+            </div>
           </div>
         </ScrollArea>
 
@@ -270,8 +278,8 @@ export default function AnalysisPage() {
               />
             </div>
           )}
-          {<AnimatedGradientProgressBar progress={progress1} height={10} />}
-
+          {/*         {<AnimatedGradientProgressBar progress={progress1} height={10} />}
+           */}
           <SearchCard
             showAnalysis={showAnalysis}
             setShowAnalysis={setShowAnalysis}

@@ -52,7 +52,7 @@ export const AIResponseCard: React.FC<AIResponseCardProps> = ({
         </Button>
       </CardHeader>
       <CardContent>
-        <CardDescription className="text-forground leading-relaxed whitespace-pre-wrap">
+        <CardDescription className="text-forground leading-relaxed whitespace-pre-wrap text-sm">
           {description}
         </CardDescription>
       </CardContent>
