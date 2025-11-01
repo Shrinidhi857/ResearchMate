@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
-import { Pencil, Check, X, UserPlus } from "lucide-react";
+import { Pencil, Check, X, UserPlus, Download, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -20,8 +20,19 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import SearchCard from "../Layouts/searchform";
 import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
+import html2pdf from "html2pdf.js";
+
+declare global {
+  interface Window {
+    latexjs?: {
+      parse: (code: string, options?: any) => any;
+      HtmlGenerator: new (options?: any) => any;
+    };
+  }
+}
 
 const MessageBubble = ({ message }) => {
   return (
@@ -43,6 +54,224 @@ const MessageBubble = ({ message }) => {
   );
 };
 
+const LaTeXEditor = ({ isOpen, onClose }) => {
+  const [latexCode, setLatexCode] = useState(`\\documentclass{article}
+\\usepackage{amsmath}
+
+\\begin{document}
+
+\\title{Sample LaTeX Document}
+\\author{Shrinidhi Achar}
+\\date{\\today}
+\\maketitle
+
+\\section{Introduction}
+This is a simple LaTeX document to test the compiler.
+
+\\section{Mathematics}
+Here’s an inline equation: $E = mc^2$
+
+And a displayed equation:
+\\[
+\\int_0^\\infty e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}
+\\]
+
+\\section{List Example}
+\\begin{itemize}
+  \\item Apple
+  \\item Banana
+  \\item Mango
+\\end{itemize}
+
+\\end{document}`);
+
+  const [compiledHTML, setCompiledHTML] = useState("");
+  const [isCompiling, setIsCompiling] = useState(false);
+  const iframeRef = useRef(null);
+
+  // Load LaTeX.js only once
+  useEffect(() => {
+    const loadLatexJS = async () => {
+      if (!window.latexjs) {
+        const script = document.createElement("script");
+        script.src =
+          "https://cdn.jsdelivr.net/npm/latex.js@0.12.6/dist/latex.min.js";
+        script.async = true;
+        document.head.appendChild(script);
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+      }
+    };
+    loadLatexJS();
+  }, []);
+
+  // Compile automatically when text changes (live preview)
+  useEffect(() => {
+    if (isOpen && window.latexjs) {
+      const delay = setTimeout(() => compileLatex(), 500);
+      return () => clearTimeout(delay);
+    }
+  }, [latexCode, isOpen]);
+
+  const compileLatex = async () => {
+    setIsCompiling(true);
+    try {
+      // Load LaTeX.js if not loaded
+      if (!window.latexjs) {
+        const script = document.createElement("script");
+        script.src =
+          "https://cdn.jsdelivr.net/npm/latex.js@0.12.6/dist/latex.min.js";
+        script.async = true;
+        document.head.appendChild(script);
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+      }
+
+      // Create a generator and parse the LaTeX
+      const generator = new window.latexjs.HtmlGenerator({ hyphenate: false });
+
+      // Parse modifies the generator. (No need to use its return value.)
+      window.latexjs.parse(latexCode, { generator });
+
+      // Get the generated DocumentFragment and styles/scripts
+      const frag = generator.domFragment(); // <-- note the () call
+      const headFrag = generator.stylesAndScripts(); // <-- note the () call
+
+      // Put both into a container and extract HTML string
+      const container = document.createElement("div");
+      // append head styles/scripts first (they are DocumentFragments)
+      container.appendChild(headFrag);
+      container.appendChild(frag);
+
+      const htmlBody = container.innerHTML;
+
+      const htmlContent = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <style>
+      body { font-family: 'Computer Modern', serif; max-width: 800px; margin: 20px auto; padding: 20px; line-height: 1.6; background: white; }
+      h1,h2,h3 { margin: .6em 0; }
+      .katex { font-size: 1.1em; }
+      .equation { margin: 1em 0; text-align: center; }
+      ul, ol { margin: 1em 0; padding-left: 2em; }
+      p { margin: 1em 0; }
+    </style>
+  </head>
+  <body>${htmlBody}</body>
+</html>`;
+
+      setCompiledHTML(htmlContent);
+    } catch (err: any) {
+      const errorHTML = `<!DOCTYPE html>
+<html>
+  <head><meta charset="UTF-8"><style>body{font-family:monospace;padding:20px;background:#fff3cd;color:#856404}pre{white-space:pre-wrap}</style></head>
+  <body><h3>Compilation Error</h3><pre>${
+    (err && err.message) || String(err)
+  }</pre></body>
+</html>`;
+      setCompiledHTML(errorHTML);
+    } finally {
+      setIsCompiling(false);
+    }
+  };
+
+  const downloadHTML = () => {
+    const blob = new Blob([compiledHTML], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "document.html";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (!isOpen) return null;
+
+  const downloadPDF = () => {
+    const latexOutput = document.getElementById("latex-output");
+    if (!latexOutput) return;
+
+    const opt = {
+      margin: 0.5,
+      filename: "document.pdf",
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf().from(latexOutput).set(opt).save();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-background">
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4 mr-2" /> Close
+            </Button>
+            <h2 className="text-lg font-semibold">LaTeX Editor</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={compileLatex}
+              disabled={isCompiling}
+              variant="outline"
+              size="sm"
+            >
+              {isCompiling ? "Compiling..." : "Recompile"}
+            </Button>
+            <Button onClick={downloadPDF} size="sm" className="gap-2">
+              <Download className="h-4 w-4" /> Download
+            </Button>
+          </div>
+        </div>
+
+        {/* Split Editor */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Editor */}
+          <div className="w-1/2 border-r flex flex-col">
+            <div className="p-3 border-b bg-muted">
+              <h3 className="text-sm font-medium">LaTeX Code</h3>
+            </div>
+            <ScrollArea className="flex-1">
+              <Textarea
+                value={latexCode}
+                onChange={(e) => setLatexCode(e.target.value)}
+                className="w-full min-h-full resize-none border-0 focus-visible:ring-0 font-mono text-sm p-4"
+                placeholder="Enter LaTeX code..."
+                style={{ minHeight: "calc(100vh - 140px)" }}
+              />
+            </ScrollArea>
+          </div>
+
+          {/* Preview */}
+          <div className="w-1/2 flex flex-col bg-gray-50">
+            <div className="p-3 border-b bg-muted">
+              <h3 className="text-sm font-medium">Compiled Preview</h3>
+            </div>
+            <ScrollArea className="flex-1">
+              <iframe
+                ref={iframeRef}
+                srcDoc={compiledHTML}
+                className="w-full h-full border-0 bg-white"
+                title="LaTeX Preview"
+                style={{ minHeight: "calc(100vh - 200px)" }}
+              />
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function ProjectPage() {
   const [projectTitle, setProjectTitle] = useState("Untitled 1");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -55,6 +284,7 @@ export default function ProjectPage() {
   const [analysis, setAnalysis] = useState(null);
   const [collaboratorEmail, setCollaboratorEmail] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLatexEditorOpen, setIsLatexEditorOpen] = useState(false);
 
   const handleEditTitle = () => {
     setTempTitle(projectTitle);
@@ -82,7 +312,6 @@ export default function ProjectPage() {
   };
 
   const handleUserPrompt = (prompt) => {
-    // Dummy function - add new message to conversation
     const newMessage = {
       id: messages.length + 1,
       text: prompt,
@@ -90,7 +319,6 @@ export default function ProjectPage() {
     };
     setMessages([...messages, newMessage]);
 
-    // Simulate a response after a delay
     setTimeout(() => {
       const responseMessage = {
         id: messages.length + 2,
@@ -102,9 +330,7 @@ export default function ProjectPage() {
   };
 
   const handleInviteCollaborator = () => {
-    // Dummy function - handle invite
     console.log("Inviting collaborator:", collaboratorEmail);
-    // Reset and close
     setCollaboratorEmail("");
     setIsDialogOpen(false);
   };
@@ -156,6 +382,18 @@ export default function ProjectPage() {
               </div>
             )}
           </div>
+
+          {/* LaTeX Editor Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setIsLatexEditorOpen(true)}
+          >
+            <FileText className="h-4 w-4" />
+            LaTeX Editor
+          </Button>
+
           {/* Collaboration Dialog */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -200,8 +438,6 @@ export default function ProjectPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          {/*           <NavigationBar />
-           */}{" "}
         </header>
 
         {/* Messages */}
@@ -234,6 +470,12 @@ export default function ProjectPage() {
           />
         </div>
       </SidebarInset>
+
+      {/* LaTeX Editor Overlay */}
+      <LaTeXEditor
+        isOpen={isLatexEditorOpen}
+        onClose={() => setIsLatexEditorOpen(false)}
+      />
     </SidebarProvider>
   );
 }

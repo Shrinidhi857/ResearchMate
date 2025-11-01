@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { Home, Search, LogOut, Rocket, MessageCircle } from "lucide-react";
+import {
+  Home,
+  Search,
+  LogOut,
+  Rocket,
+  MessageCircle,
+  FolderKanban,
+} from "lucide-react";
 import { DocumentList } from "./DocumentList";
 import tiger from "@/assets/tiger.png";
 import {
@@ -31,6 +38,8 @@ interface User {
 const items = [
   { title: "Search", url: "#", icon: Search },
   { title: "Home", url: "/", icon: Home },
+  { title: "Project", url: "/project", icon: FolderKanban },
+
   { title: "RAG Chat", url: "/chat", icon: MessageCircle },
   { title: "NLP Analysis", url: "/analysis", icon: Rocket },
 ];

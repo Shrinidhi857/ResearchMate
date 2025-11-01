@@ -14,26 +14,31 @@ export default function HorizontalRoundedCard() {
       icon: FolderKanban,
       title: "Project",
       color: "bg-blue-500",
+      url: "/project",
     },
     {
       icon: MessageSquare,
       title: "Chat",
       color: "bg-emerald-500",
+      url: "/chat",
     },
     {
       icon: BarChart2,
       title: "Analyse",
       color: "bg-amber-500",
+      url: "/analyse",
     },
     {
       icon: Table,
       title: "Survey Table",
       color: "bg-purple-500",
+      url: "/table",
     },
     {
       icon: Network,
       title: "Cluster Papers",
       color: "bg-pink-500",
+      url: "/themeCluster",
     },
   ];
 
@@ -47,17 +52,19 @@ export default function HorizontalRoundedCard() {
           {items.map((item, index) => {
             const Icon = item.icon;
             return (
-              <div
-                key={index}
-                className="flex flex-col items-center gap-3 hover:scale-110 transition-transform duration-300"
-              >
-                <div className={`${item.color} rounded-full p-1 shadow-lg`}>
-                  <Icon className="w-7 h-7 text-white" />
+              <a href={item.url}>
+                <div
+                  key={index}
+                  className="flex flex-col items-center gap-3 hover:scale-110 transition-transform duration-300"
+                >
+                  <div className={`${item.color} rounded-full p-1 shadow-lg`}>
+                    <Icon className="w-7 h-7 text-white" />
+                  </div>
+                  <p className="text-sm font-medium text-center text-primary">
+                    {item.title}
+                  </p>
                 </div>
-                <p className="text-sm font-medium text-center text-primary">
-                  {item.title}
-                </p>
-              </div>
+              </a>
             );
           })}
         </div>

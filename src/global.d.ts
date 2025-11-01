@@ -13,3 +13,4 @@ declare namespace JSX {
     };
   }
 }
+declare module "html2pdf.js";
