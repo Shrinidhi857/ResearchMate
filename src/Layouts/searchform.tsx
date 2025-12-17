@@ -50,7 +50,7 @@ const SearchCard: React.FC<SearchCardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto p-2">
+    <div className="w-full max-w-3xl mx-auto p-2 z-100">
       <div className="bg-card text-card-foreground rounded-xl border border-border shadow-sm">
         <div className="p-4 space-y-3">
           {/* Input Container */}

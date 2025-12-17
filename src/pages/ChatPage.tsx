@@ -10,7 +10,8 @@ import NavigationBar from "../Layouts/Navbar";
 import { Card } from "../components/ui/card";
 import SearchCard from "../Layouts/searchform";
 import * as React from "react";
-import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
+import DocumentAnalysisCard from "../Layouts/DocumentSelectAnalyse";
+import DocumentSelectCard from "../Layouts/DocumentSelectCard";
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
@@ -74,6 +75,35 @@ export default function ChatPage() {
     }
   };
 
+  const handleSubmitAnalysis = async (selectedDocuments) => {
+    if (selectedDocuments.length > 0) {
+      const token = localStorage.getItem("authToken");
+
+      try {
+        const response = await fetch(`${API_URL}/api/analyse`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(selectedDocuments),
+        });
+
+        if (response.ok) {
+          setAnalysis(true);
+          setShowAnalysis(false);
+        } else {
+          const err = await response.json().catch(() => null);
+          alert(`Failed to Analyse: ${err?.message || "Unknown error"}`);
+          setAnalysis(false);
+        }
+      } catch (error) {
+        console.error("Analysis error:", error);
+        setAnalysis(false);
+      }
+    }
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -101,11 +131,12 @@ export default function ChatPage() {
         <div className="absolute left-4 right-4 sticky bottom-0 z-10">
           {showAnalysis && (
             <div className="flex justify-center">
-              <DocumentAnalysisCard
+              <DocumentSelectCard
                 showAnalysis={showAnalysis}
                 setShowAnalysis={setShowAnalysis}
                 analysis={analysis}
                 setAnalysis={setAnalysis}
+                handleSubmit={handleSubmitAnalysis}
               />
             </div>
           )}
