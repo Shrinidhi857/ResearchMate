@@ -41,7 +41,7 @@ const sampleResponse = `Based on the research papers you've uploaded, here are t
 
 These insights suggest that while AI-assisted learning shows promise, more rigorous and long-term research is needed to establish best practices and understand the full impact on educational outcomes.`;
 
-const MessageBubble = ({ message }) => {
+const MessageBubble = ({ message }:any) => {
   return (
     <div
       className={`flex w-full mb-4 ${
@@ -167,7 +167,7 @@ export default function AnalysisPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSubmitAnalysis = async (selectedDocuments) => {
+  const handleSubmitAnalysis = async (selectedDocuments:any) => {
     try {
       const token = localStorage.getItem("authToken");
 

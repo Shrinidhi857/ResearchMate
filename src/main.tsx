@@ -12,6 +12,7 @@ import ResearchMateDashboard from "./pages/Dashboard";
 import "@dotlottie/player-component";
 import AnalysisPage from "./pages/AnalysisPage";
 import ProjectPage from "./pages/ProjectPage";
+import ProjectSelectionPage from "./pages/ProjectSelectionPage";
 
 function RootApp() {
   const token = localStorage.getItem("authToken");
@@ -31,7 +32,6 @@ axios.interceptors.response.use(
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {/* ✅ Wrap everything once here */}
     <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
       <BrowserRouter>
         <Routes>
@@ -39,8 +39,10 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/auth/success" element={<GoogleSuccess />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/analysis" element={<AnalysisPage />} />
-          <Route path="/project" element={<ProjectPage />} />
+
           <Route path="/*" element={<RootApp />} />
+          <Route path="/project" element={<ProjectSelectionPage />} />
+          <Route path="/project/:projectId" element={<ProjectPage />} />
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

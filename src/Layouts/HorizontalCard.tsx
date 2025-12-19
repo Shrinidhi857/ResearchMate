@@ -43,11 +43,8 @@ export default function HorizontalRoundedCard() {
   ];
 
   return (
-    <Card
-      className="border-0 shadow-2xl  w-full "
-      style={{ borderRadius: "9999px" }}
-    >
-      <CardContent className="py-1 px-1">
+    <div className="w-full h-full p-3 overflow-x-hidden py-4">
+
         <div className="flex items-center justify-around gap-4">
           {items.map((item, index) => {
             const Icon = item.icon;
@@ -68,7 +65,7 @@ export default function HorizontalRoundedCard() {
             );
           })}
         </div>
-      </CardContent>
-    </Card>
+     </div>
+    
   );
 }

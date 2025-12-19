@@ -1,13 +1,5 @@
 <a id="readme-top"></a>
 
-<!-- PROJECT SHIELDS -->
-
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][linkedin-url]
 
 <!-- PROJECT LOGO -->
 <br />
@@ -16,12 +8,10 @@
     <img src="src/assets/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Research Mate Frontend</h3>
+  <h3 align="center">Research Mate</h3>
 
   <p align="center">
     A modern, intuitive interface for streamlining academic research workflows
-    <br />
-    <a href="https://github.com/yourusername/research-mate-frontend"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://research-mate-demo.com">View Demo</a>
@@ -63,13 +53,29 @@
 
 <!-- ABOUT THE PROJECT -->
 
-## About The Project
+## What is ResearchMate ?🤔
 
-[![Research Mate Screen Shot][product-screenshot]](https://research-mate-demo.com)
 
-Research Mate is a comprehensive platform designed to revolutionize how researchers manage their academic work. The frontend provides an elegant, responsive interface that makes complex research tasks simple and intuitive.
+Hi, I’m Shrinidhi. Like many students, I found myself drowning in a sea of PDFs while working on my academic research. Between managing dozens of papers, tracking my progress, and trying to analyze complex data quickly, I felt overwhelmed. I realized there had to be a better way to work.
 
-### Key Features
+That’s why I built Research Mate.
+
+I wanted to create a platform that doesn't just store documents, but actually helps you understand them. By bridging the gap between AI-driven analysis and intelligent document management, Research Mate turns a chaotic folder of PDFs into a streamlined, intuitive workspace. It’s built by a researcher, for researchers. Management. 
+- **AI-Powered Analysis**:
+  - **Auto Annotation**: Mention the text you want to annotate and the AI will automatically annotate it for you. 
+  - **Auto Tagging**: you write the paragraph and ai will tag papers for you based on the paragraph.
+  - **Automated Summarization**: Instantly generate concise summaries to grasp the core concepts of complex papers.
+  - **Interactive Q&A Basically RAG**: Chat directly with your documents to extract specific data points or clarify difficult sections.
+  - **Intelligent Extraction**: Automatically identify and organize key findings, methodologies, and references.
+  
+- **Comprehensive Document Management**:
+  - **Centralized Repository**: Store and manage all your research PDFs, notes, and datasets in one secure location, currently we are limited to the Text files.
+  - **Advanced Annotation**: Highlight text and add persistent comments directly within the integrated PDF viewer.
+  - **Smart Organization**: Utilize multi-level categorization and automated metadata extraction for effortless retrieval.
+
+
+
+### Boosting Productivity
 
 - **Smart Document Management** - Organize, annotate, and search through research papers effortlessly
 - **Collaborative Workspace** - Share findings and collaborate with team members in real-time
@@ -83,11 +89,11 @@ Research Mate is a comprehensive platform designed to revolutionize how research
 ### Built With
 
 - [![React][React.js]][React-url]
-- [![TypeScript][TypeScript]][TypeScript-url]
-- [![Vite][Vite]][Vite-url]
-- [![TailwindCSS][TailwindCSS]][Tailwind-url]
-- [![React Router][ReactRouter]][ReactRouter-url]
-- [![Redux][Redux]][Redux-url]
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)[![TypeScript][TypeScript]][TypeScript-url]
+[![Vite][Vite]][Vite-url]
+[![TailwindCSS][TailwindCSS]][Tailwind-url]
+[![React Router][ReactRouter]][ReactRouter-url][![Redux][Redux]][Redux-url]
+![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-black?logo=shadcnui&logoColor=white)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -225,23 +231,6 @@ research-mate-frontend/
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ROADMAP -->
-
-## Roadmap
-
-- [x] Core UI components
-- [x] Authentication system
-- [x] Document management
-- [ ] Real-time collaboration features
-- [ ] Advanced analytics dashboard
-- [ ] Mobile app version
-- [ ] Offline mode support
-- [ ] AI-powered research suggestions
-
-See the [open issues](https://github.com/yourusername/research-mate-frontend/issues) for a full list of proposed features and known issues.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 <!-- CONTRIBUTING -->
 
 ## Contributing
@@ -256,11 +245,6 @@ If you have a suggestion that would make this better, please fork the repo and c
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-### Top Contributors
-
-<a href="https://github.com/yourusername/research-mate-frontend/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=yourusername/research-mate-frontend" alt="contrib.rocks image" />
-</a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -276,9 +260,8 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_twitter) - email@example.com
+shrinidhiachar857@gmail.com
 
-Project Link: [https://github.com/yourusername/research-mate-frontend](https://github.com/yourusername/research-mate-frontend)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -288,10 +271,11 @@ Project Link: [https://github.com/yourusername/research-mate-frontend](https://g
 
 - [React Documentation](https://react.dev/)
 - [Vite Guide](https://vitejs.dev/guide/)
-- [TailwindCSS](https://tailwindcss.com/)
+- [TailwindCSS](https://tailwindcss.com/docs)
 - [Font Awesome](https://fontawesome.com)
 - [React Icons](https://react-icons.github.io/react-icons/)
-- [Best-README-Template](https://github.com/othneildrew/Best-README-Template)
+- [Scadcn ui](https://ui.shadcn.com/)
+- [Lottie Files](https://lottiefiles.com/)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -322,3 +306,8 @@ Project Link: [https://github.com/yourusername/research-mate-frontend](https://g
 [ReactRouter-url]: https://reactrouter.com/
 [Redux]: https://img.shields.io/badge/Redux-593D88?style=for-the-badge&logo=redux&logoColor=white
 [Redux-url]: https://redux.js.org/
+
+---
+
+Thank you for checking out this project.  
+Have a great day and happy coding! 😊
