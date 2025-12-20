@@ -86,7 +86,7 @@ export default function ChatPage() {
     }
   };
 
-  const handleSubmitAnalysis = async (selectedDocuments: any) => {
+  const handleSubmitAnalysis = async (selectedDocuments: any []) => {
     if (!projectId) {
       alert("Please select a project first");
       return;
@@ -102,10 +102,7 @@ export default function ChatPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            project_id: projectId, // ✅ Structured as object
-            documents: selectedDocuments
-          }),
+          body: JSON.stringify(selectedDocuments.map(d => d.doc_id)),
         });
 
         if (response.ok) {
