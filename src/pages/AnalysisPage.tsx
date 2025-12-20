@@ -14,32 +14,13 @@ import AnalyseAnimation from "../animation/Analyse";
 import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
 //import { AIResponseCard } from "../Layouts/Highlightsheet";
 import AnimatedGradientProgressBar from "../Layouts/Progressbar";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AIResponseCard } from "@/Layouts/Highlightsheet";
-import ProgressBarCard from "@/Layouts/Document-progres";
+
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
-const sampleResponse = `Based on the research papers you've uploaded, here are the key findings:
 
-1. **Main Research Gap**: The current literature shows a significant gap in understanding the long-term effects of AI-assisted learning in educational environments. While short-term studies (3-6 months) show positive results, there's limited data on retention and skill development over 12+ months.
-
-2. **Methodological Limitations**: 
-   - Small sample sizes (n<100) in 78% of reviewed studies
-   - Lack of diverse demographic representation
-   - Limited cross-cultural validation
-
-3. **Contradictions Identified**:
-   - Study A (2023) reports 45% improvement in learning outcomes
-   - Study B (2023) reports only 12% improvement with similar methodologies
-   - Possible confounding variables: instructor experience, technology infrastructure
-
-4. **Future Research Directions**:
-   - Longitudinal studies spanning multiple academic years
-   - Mixed-methods approaches combining quantitative and qualitative data
-   - Investigation of individual learning style interactions with AI tools
-
-These insights suggest that while AI-assisted learning shows promise, more rigorous and long-term research is needed to establish best practices and understand the full impact on educational outcomes.`;
 
 const MessageBubble = ({ message }:any) => {
   return (
@@ -66,10 +47,12 @@ export default function AnalysisPage() {
   const [messages, setMessages] = React.useState<
     { id: number; text: string; isOutgoing: boolean }[]
   >([]);
-  const [progress1, setProgress1] = useState(0);
+
 
   const [showAnalysis, setShowAnalysis] = React.useState(true);
   const [analysis, setAnalysis] = React.useState(false);
+  const [docProgress, setDocProgress] = useState<Record<string, { title: string, progress: number }>>({});
+  const [results, setResults] = useState<{ doc_id: string; title: string; highlight: string; confidence: number }[]>([]);
 
   // helper: add new message
   const addMessage = (text: string, isOutgoing: boolean) => {
@@ -103,73 +86,19 @@ export default function AnalysisPage() {
     }
   };
 
-  /* const handleSubmitAnalysis = async (selectedDocuments) => {
+
+
+  const handleSubmitAnalysis = async (selectedDocuments: any[]) => {
     try {
       const token = localStorage.getItem("authToken");
 
-      // Create a new EventSource to stream from backend
-      const eventSource = new EventSource(`${API_URL}/api/test`, {
-        withCredentials: false,
+      // Initialize progress for selected documents
+      const initialProgress: Record<string, { title: string, progress: number }> = {};
+      selectedDocuments.forEach(doc => {
+        initialProgress[doc.doc_id] = { title: doc.title || `Doc ${doc.doc_id}`, progress: 0 };
       });
-
-      setAnalysis(true);
-      setShowAnalysis(false);
-
-      // Send selectedDocuments as a POST request (we can’t send body via EventSource directly)
-      // So, create a fetch POST first to trigger backend processing
-      await fetch(`${API_URL}/api/test`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(selectedDocuments),
-      });
-
-      // Now, listen to SSE messages
-      eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log("📩 Stream update:", data);
-
-        // Display updates as they arrive
-        if (data.phase === "error") {
-          addMessage(`❌ Error: ${data.error}`, false);
-          eventSource.close();
-        } else if (data.status === "start") {
-          addMessage(`🟡 ${data.message}`, false);
-        } else if (data.status === "done") {
-          addMessage(`✅ Phase ${data.phase} done`, false);
-        } else if (data.status === "complete") {
-          addMessage(`🎉 ${data.message}`, false);
-          eventSource.close();
-        }
-      };
-
-      eventSource.onerror = (err) => {
-        console.error("SSE error:", err);
-        addMessage("⚠️ Stream connection lost.", false);
-        eventSource.close();
-      };
-    } catch (error) {
-      console.error("Analysis error:", error);
-      addMessage("⚠️ Failed to start analysis.", false);
-      setAnalysis(false);
-    }
-  }; */
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress1((prev) => {
-        if (prev >= 100) return 0;
-        return prev + 0.5;
-      });
-    }, 30);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleSubmitAnalysis = async (selectedDocuments:any) => {
-    try {
-      const token = localStorage.getItem("authToken");
+      setDocProgress(initialProgress);
+      setResults([]);
 
       // Step 1: Start analysis and get session ID
       const response = await fetch(`${API_URL}/api/nlp`, {
@@ -178,7 +107,7 @@ export default function AnalysisPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(selectedDocuments),
+        body: JSON.stringify(selectedDocuments.map(d => d.doc_id)), // Server expects list of IDs
       });
 
       if (!response.ok) throw new Error("Failed to start analysis");
@@ -202,21 +131,32 @@ export default function AnalysisPage() {
           eventSource.close();
           setAnalysis(false);
         } else if (data.status === "start") {
-          addMessage(`🟡 ${data.message}`, false);
+          console.log(`🟡 ${data.message}`);
         } else if (data.status === "processing") {
-          addMessage(`🔄 ${data.message}`, false);
+          console.log(`🔄 ${data.message}`);
         } else if (data.status === "done") {
-          addMessage(`✅ ${data.message}`, false);
+          console.log(`✅ ${data.message}`);
           eventSource.close();
           setAnalysis(false);
         } else if (data.sentence) {
-          addMessage(
-            `📝 ${data.predicted_label}: "${data.sentence.substring(
-              0,
-              60
-            )}..." (${(data.confidence * 100).toFixed(1)}%)`,
-            false
-          );
+          // Update individual document progress
+          setDocProgress(prev => ({
+            ...prev,
+            [data.doc_id]: { ...prev[data.doc_id], progress: 100 }
+          }));
+
+          // Add highlight result
+          setResults(prev => [
+            ...prev,
+            {
+              doc_id: data.doc_id,
+              title: initialProgress[data.doc_id]?.title || "Research Document",
+              highlight: data.sentence,
+              confidence: data.confidence
+            }
+          ]);
+
+          console.log(`📝 Highlight received for ${data.doc_id}`);
         }
       };
 
@@ -251,16 +191,26 @@ export default function AnalysisPage() {
         {analysis && <AnalyseAnimation />}
 
         <ScrollArea className="flex-1 p-4 pb-32">
-          <div className="space-y-2 flex flex-col items-center">
+          <div className="max-w-4xl mx-auto w-full space-y-6 flex flex-col items-center">
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
 
-            <div className="flex flex-col items-center gap-4 mt-6 w-full">
-              <ProgressBarCard title="AI Research Paper" progress={75} />
-              <ProgressBarCard title="Business Proposal" progress={40} />
-              <ProgressBarCard title="Security Report" progress={100} />
-              <AIResponseCard heading="hello" description={sampleResponse} />
+            <div className="flex flex-col items-center gap-4 w-full px-4">
+              {Object.entries(docProgress).map(([id, info]) => (
+                <AnimatedGradientProgressBar
+                  key={id} 
+                  title={info.title} 
+                  progress={info.progress} 
+                />
+              ))}
+              {results.map((result, idx) => (
+                <AIResponseCard 
+                  key={idx} 
+                  heading={`Highlight: ${result.title}`} 
+                  description={result.highlight} 
+                />
+              ))}
             </div>
           </div>
         </ScrollArea>

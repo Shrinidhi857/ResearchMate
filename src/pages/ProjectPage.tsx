@@ -27,7 +27,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import SearchCard from "../Layouts/searchform";
 import DocumentAnalysisCard from "../Layouts/DocumentSelectCard";
 import html2pdf from "html2pdf.js";
@@ -36,6 +36,8 @@ import { AvatarFallback } from "@radix-ui/react-avatar";
 
 // 💡 NEW IMPORT: Import the PaperBucketDialog component (adjust path if needed)
 import PaperBucketDialog from "../Layouts/PaperBucketDialog";
+import CodeEditor from "../Layouts/CodeEditor";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 declare global {
   interface Window {
@@ -79,9 +81,11 @@ const MessageBubble = ({
 const LaTeXEditor = ({
   isOpen,
   onClose,
+  projectId,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  projectId?: string;
 }) => {
   const [latexCode, setLatexCode] = useState(`\\documentclass{article}
 \\usepackage{amsmath}
@@ -113,9 +117,74 @@ And a displayed equation:
 
 \\end{document}`);
 
+  // ... (latexCode state)
+  const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
   const [compiledHTML, setCompiledHTML] = useState("");
   const [isCompiling, setIsCompiling] = useState(false);
+  // ... (rest of state)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Fetch paper content when editor opens
+  useEffect(() => {
+    if (isOpen && projectId) {
+      fetchPaper();
+    }
+  }, [isOpen, projectId]);
+
+  const fetchPaper = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/paper`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.content) {
+            setLatexCode(data.content);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching paper:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const savePaper = async (content: string) => {
+    if (!projectId) return;
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      await fetch(`${API_URL}/api/projects/${projectId}/paper`, {
+        method: "PUT",
+        headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ content }),
+      });
+    } catch (error) {
+      console.error("Error saving paper:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Debounced save
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        if (projectId && latexCode) {
+             // Only save if it's not the default template? 
+             // Or just save. The default template is useful.
+            savePaper(latexCode);
+        }
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [latexCode, projectId]);
 
   // Load LaTeX.js only once
   useEffect(() => {
@@ -204,10 +273,6 @@ And a displayed equation:
     }
   };
 
-  // ... (downloadHTML and downloadPDF functions remain the same)
-
-  if (!isOpen) return null;
-
   const downloadPDF = () => {
     // Note: The element with ID 'latex-output' is missing in your code,
     // so this function won't work correctly unless you adjust the iframe's wrapper.
@@ -225,69 +290,79 @@ And a displayed equation:
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-background">
-      <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col border-l bg-background w-[50%] shrink-0 transition-all duration-300 ease-in-out shadow-xl z-20">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-3">
+            <h2 className="text-lg font-semibold">LaTeX Editor</h2>
+          </div>
+           <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground mr-2">
+                {isSaving ? "Saving..." : "Saved"}
+            </span>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4 mr-2" /> Close
             </Button>
-            <h2 className="text-lg font-semibold">LaTeX Editor</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={compileLatex}
-              disabled={isCompiling}
-              variant="outline"
-              size="sm"
-            >
-              {isCompiling ? "Compiling..." : "Recompile"}
-            </Button>
-            <Button onClick={downloadPDF} size="sm" className="gap-2">
-              <Download className="h-4 w-4" /> Download
-            </Button>
           </div>
         </div>
-
-        {/* Split Editor */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Editor */}
-          <div className="w-1/2 border-r flex flex-col">
-            <div className="p-3 border-b bg-muted">
-              <h3 className="text-sm font-medium">LaTeX Code</h3>
-            </div>
-            <ScrollArea className="flex-1">
-              <Textarea
-                value={latexCode}
-                onChange={(e) => setLatexCode(e.target.value)}
-                className="w-full min-h-full resize-none border-0 focus-visible:ring-0 font-mono text-sm p-4"
-                placeholder="Enter LaTeX code..."
-                style={{ minHeight: "calc(100vh - 140px)" }}
-              />
-            </ScrollArea>
-          </div>
-
-          {/* Preview */}
-          <div className="w-1/2 flex flex-col bg-gray-50">
-            <div className="p-3 border-b bg-muted">
-              <h3 className="text-sm font-medium">Compiled Preview</h3>
-            </div>
-            <ScrollArea className="flex-1">
-              <iframe
-                ref={iframeRef}
-                srcDoc={compiledHTML}
-                className="w-full h-full border-0 bg-white"
-                title="LaTeX Preview"
-                style={{ minHeight: "calc(100vh - 200px)" }}
-              />
-            </ScrollArea>
-          </div>
+        
+        {/* Tabs and Content */}
+        <div className="flex-1 overflow-hidden flex flex-col p-2">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "code" | "preview")} className="flex flex-col h-full">
+             <div className="flex items-center justify-between mb-2 px-2">
+                <TabsList>
+                    <TabsTrigger value="code">Code</TabsTrigger>
+                    <TabsTrigger value="preview">Preview</TabsTrigger>
+                </TabsList>
+                 <div className="flex items-center gap-2">
+                    <Button
+                      onClick={compileLatex}
+                      disabled={isCompiling}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {isCompiling ? "Compiling..." : "Recompile"}
+                    </Button>
+                    <Button onClick={downloadPDF} size="sm" className="gap-2">
+                      <Download className="h-4 w-4" /> Download
+                    </Button>
+                  </div>
+             </div>
+             
+             <div className="flex-1 relative border rounded-md overflow-hidden">
+                <TabsContent value="code" className="h-full mt-0 data-[state=active]:block hidden">
+                    <div className="absolute inset-0">
+                         {isLoading ? (
+                            <div className="flex items-center justify-center h-full text-muted-foreground">Loading...</div>
+                        ) : (
+                          <CodeEditor
+                              value={latexCode}
+                              onChange={setLatexCode}
+                              minHeight="100%"
+                              className="h-full"
+                          />
+                        )}
+                    </div>
+                </TabsContent>
+                
+                <TabsContent value="preview" className="h-full mt-0 data-[state=active]:block hidden">
+                     <div className="absolute inset-0 bg-white">
+                        <iframe
+                            ref={iframeRef}
+                            srcDoc={compiledHTML}
+                            className="w-full h-full border-0"
+                            title="LaTeX Preview"
+                        />
+                    </div>
+                </TabsContent>
+             </div>
+            </Tabs>
         </div>
-      </div>
     </div>
   );
 };
+  
+
 
 // -----------------------------------------------------------
 // ProjectPage Component (Modified)
@@ -307,7 +382,7 @@ const AVATAR_COLORS = [
   "bg-green-400",
 ];
 
-export default function ProjectPage() {
+function ProjectPage() {
   const { projectId } = useParams<{ projectId?: string }>();
   const location = useLocation();
   const [projectTitle, setProjectTitle] = useState(
@@ -315,17 +390,22 @@ export default function ProjectPage() {
   );
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState(projectTitle);
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! How can I help you today?", isOutgoing: false },
-    { id: 2, text: "I need help with my project", isOutgoing: true },
-  ]);
+  const [messages, setMessages] = useState<
+    { id: number; text: string; isOutgoing: boolean }[]
+  >([]);
+
+  // Helper function to add a message
+  const addMessage = (text: string, isOutgoing: boolean) => {
+    setMessages((prev) => [...prev, { id: prev.length + 1, text, isOutgoing }]);
+  };
   const [showAnalysis, setShowAnalysis] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
+  const [analysis, setAnalysis] = useState<boolean>(false);
   const [collaboratorEmail, setCollaboratorEmail] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLatexEditorOpen, setIsLatexEditorOpen] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Control sidebar state locally
 
 
 
@@ -335,7 +415,6 @@ export default function ProjectPage() {
       // Use projectId from URL param, or fallback to a default for testing
       const id = projectId || "default-project-id";
       
-      setIsLoadingUsers(true);
       try {
         const token = localStorage.getItem("authToken");
         const response = await fetch(`${API_URL}/api/projects/${id}/top-users`, {
@@ -353,13 +432,46 @@ export default function ProjectPage() {
         // Set empty array on error
         setUsers([]);
       } finally {
-        setIsLoadingUsers(false);
+        // No isLoadingUsers state to set
       }
     };
 
     fetchUsers();
     fetchProjectDetails();
+    if (projectId) {
+      localStorage.setItem("currentProjectId", projectId);
+    }
   }, [projectId]);
+
+
+
+  const handleUserPrompt = async (question: string) => {
+    // Add user prompt bubble
+    addMessage(question, true);
+
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/ask`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch response");
+      const data = await response.json();
+
+      // Add bot response bubble
+      addMessage(data.answer || "⚠️ No response found", false);
+    } catch (error) {
+      console.error("Error fetching answer:", error);
+      addMessage("⚠️ Error fetching response", false);
+    }
+  };
+
+  
 
   const fetchProjectDetails = async () => {
     if (!projectId) return;
@@ -458,23 +570,7 @@ export default function ProjectPage() {
     }
   };
 
-  const handleUserPrompt = (prompt: string) => {
-    const newMessage = {
-      id: messages.length + 1,
-      text: prompt,
-      isOutgoing: true,
-    };
-    setMessages([...messages, newMessage]);
 
-    setTimeout(() => {
-      const responseMessage = {
-        id: messages.length + 2,
-        text: "This is a dummy response to your prompt.",
-        isOutgoing: false,
-      };
-      setMessages((prev) => [...prev, responseMessage]);
-    }, 1000);
-  };
 
   const handleInviteCollaborator = () => {
     console.log("Inviting collaborator:", collaboratorEmail);
@@ -483,21 +579,23 @@ export default function ProjectPage() {
   };
 
   return (
-    <SidebarProvider>
+    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
       <AppSidebar />
-      <SidebarInset>
-        {/* Right Side Icon Sidebar */}
-        <div className="fixed right-0 mt-16 h-full w-16 border-l bg-background flex flex-col items-center py-4 gap-6 z-1">
-          <PaperBucketDialog projectId={projectId} />
-          np
-          {/* <Button variant="ghost" size="icon">
-            <UserPlus className="h-5 w-5" />
-          </Button>
-
-          <Button variant="ghost" size="icon">
-            <Download className="h-5 w-5" />
-          </Button> */}
-        </div>
+      <SidebarInset className="flex flex-row overflow-hidden h-screen">
+       <div className="flex-1 flex flex-col relative min-w-0 transition-all duration-300">
+        {/* Right Side Icon Sidebar - Keep it or move it? 
+            Original logic had it fixed right. 
+            If Editor opens, it panel slides in from right. 
+            The icon sidebar might overlap or should stay on chat side?
+            "right to the current window" -> Editor takes right side.
+            Let's keep icons in the chat area (left pane) if possible, 
+            or fixed right of SCREEN? 
+            If fixed right of screen, it overlaps editor.
+            Visual fix: Put it inside the Chat flex column or manage z-index.
+            Let's keep it fixed but ensure Z-index is lower than editor? 
+            Or move it into this container.
+        */}
+       
 
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-10 shadow-sm">
@@ -561,9 +659,7 @@ export default function ProjectPage() {
           <div className="flex items-center ml-auto">
             <TooltipProvider>
               <div className="flex -space-x-4">
-                {isLoadingUsers ? (
-                  <div className="text-sm text-muted-foreground">Loading...</div>
-                ) : users.length > 0 ? (
+                {users.length > 0 ? (
                   users.slice(0, 5).map((user, index) => (
                     <Tooltip key={user.id}>
                       <TooltipTrigger asChild>
@@ -600,7 +696,10 @@ export default function ProjectPage() {
             variant="outline"
             size="sm"
             className="gap-2"
-            onClick={() => setIsLatexEditorOpen(true)}
+            onClick={() => {
+                setIsLatexEditorOpen(true);
+                setSidebarOpen(false); // Close left sidebar
+            }}
           >
             <FileText className="h-4 w-4" />
             LaTeX Editor
@@ -661,17 +760,18 @@ export default function ProjectPage() {
         </ScrollArea>
 
         {/* Input + Analysis */}
-        <div className="absolute left-4 right-4 bottom-4 z-10">
-          {showAnalysis && (
+        <div className="absolute left-4 right-20 bottom-4 z-10">
+          {/* {showAnalysis && (
             <div className="flex justify-center mb-4">
               <DocumentAnalysisCard
                 showAnalysis={showAnalysis}
                 setShowAnalysis={setShowAnalysis}
                 analysis={analysis}
                 setAnalysis={setAnalysis}
+                handleSubmit={handleSubmit}
               />
             </div>
-          )}
+          )} */}
           <SearchCard
             showAnalysis={showAnalysis}
             setShowAnalysis={setShowAnalysis}
@@ -680,13 +780,22 @@ export default function ProjectPage() {
             onPrompt={handleUserPrompt}
           />
         </div>
+       </div>
+       
+       {/* Editor Panel */}
+       {isLatexEditorOpen && (
+        <LaTeXEditor
+            isOpen={isLatexEditorOpen}
+            onClose={() => setIsLatexEditorOpen(false)}
+            projectId={projectId}
+        />
+       )}
       </SidebarInset>
 
-      {/* LaTeX Editor Overlay */}
-      <LaTeXEditor
-        isOpen={isLatexEditorOpen}
-        onClose={() => setIsLatexEditorOpen(false)}
-      />
+      {/* Replaced: LaTeX Editor Overlay is now inline above */}
     </SidebarProvider>
   );
+
 }
+
+export default ProjectPage;

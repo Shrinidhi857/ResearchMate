@@ -10,12 +10,13 @@ import NavigationBar from "../Layouts/Navbar";
 import { Card } from "../components/ui/card";
 import SearchCard from "../Layouts/searchform";
 import * as React from "react";
+import { useSearchParams } from "react-router-dom"; // ✅ Added
 import DocumentAnalysisCard from "../Layouts/DocumentSelectAnalyse";
 import DocumentSelectCard from "../Layouts/DocumentSelectCard";
 // Sample messages - replace with your actual message data
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
-const MessageBubble = ({ message }) => {
+const MessageBubble = ({ message }:any) => {
   return (
     <div
       className={`flex w-full mb-4 ${
@@ -37,6 +38,8 @@ const MessageBubble = ({ message }) => {
 
 // ChatPage.tsx
 export default function ChatPage() {
+  const [searchParams] = useSearchParams();
+  const projectId = searchParams.get("projectId") || localStorage.getItem("currentProjectId");
   const [messages, setMessages] = React.useState<
     { id: number; text: string; isOutgoing: boolean }[]
   >([]);
@@ -48,9 +51,12 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, { id: prev.length + 1, text, isOutgoing }]);
   };
 
-  // handle user prompt + fetch
   const handleUserPrompt = async (question: string) => {
-    // Add user prompt bubble
+    if (!projectId) {
+      addMessage("⚠️ Please select a project first", false);
+      return;
+    }
+
     addMessage(question, true);
 
     try {
@@ -61,21 +67,31 @@ export default function ChatPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({ 
+          project_id: projectId, // ✅ Added project_id
+          question 
+        }),
       });
 
-      if (!response.ok) throw new Error("Failed to fetch response");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch response");
+      }
       const data = await response.json();
 
-      // Add bot response bubble
       addMessage(data.answer || "⚠️ No response found", false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching answer:", error);
-      addMessage("⚠️ Error fetching response", false);
+      addMessage(`⚠️ ${error.message || "Error fetching response"}`, false);
     }
   };
 
-  const handleSubmitAnalysis = async (selectedDocuments) => {
+  const handleSubmitAnalysis = async (selectedDocuments: any) => {
+    if (!projectId) {
+      alert("Please select a project first");
+      return;
+    }
+
     if (selectedDocuments.length > 0) {
       const token = localStorage.getItem("authToken");
 
@@ -86,7 +102,10 @@ export default function ChatPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(selectedDocuments),
+          body: JSON.stringify({
+            project_id: projectId, // ✅ Structured as object
+            documents: selectedDocuments
+          }),
         });
 
         if (response.ok) {

@@ -1,7 +1,7 @@
 // src/components/PaperBucketDialog.tsx
 
 import React, { useState, useEffect } from "react";
-import { Plus, X, FileText, Loader2 } from "lucide-react";
+import { Plus, X, FileText, Loader2, Database, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,14 +42,30 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingBucket, setIsLoadingBucket] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [vectorStatus, setVectorStatus] = useState<"not_started" | "processing" | "ready" | "error">("not_started");
+  const [isBuilding, setIsBuilding] = useState(false);
 
   // Fetch available documents and paper bucket when dialog opens
   useEffect(() => {
+    fetchVectorStatus(); // Check status on mount
     if (isOpen) {
       fetchDocuments();
       fetchPaperBucket();
     }
   }, [isOpen, projectId]);
+
+  // Polling for vector status when processing
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (vectorStatus === "processing") {
+      interval = setInterval(() => {
+        fetchVectorStatus();
+      }, 3000); // Poll every 3 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [vectorStatus, projectId]);
 
   const fetchDocuments = async () => {
     setIsLoading(true);
@@ -94,6 +110,52 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
       setSelectedPaperIds([]);
     } finally {
       setIsLoadingBucket(false);
+    }
+  };
+
+  const fetchVectorStatus = async () => {
+    const id = projectId || "default-project-id";
+    if (!id || id === "default-project-id") return;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/projects/${id}/vector-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      setVectorStatus(data.status);
+    } catch (err) {
+      console.error("Error fetching vector status:", err);
+    }
+  };
+
+  const handleBuildContext = async () => {
+    const id = projectId || "default-project-id";
+    if (!id || id === "default-project-id") return;
+
+    setIsBuilding(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/projects/${id}/build-context`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to build context");
+      }
+
+      const data = await response.json();
+      setVectorStatus(data.status);
+    } catch (err) {
+      console.error("Error building context:", err);
+      setError(err instanceof Error ? err.message : "Failed to build context");
+    } finally {
+      setIsBuilding(false);
     }
   };
 
@@ -158,15 +220,66 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" className="gap-2 relative">
           <FileText className="h-4 w-4" />
+          {vectorStatus === "ready" && (
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-background" />
+          )}
+          {vectorStatus === "processing" && (
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-blue-500 rounded-full border-2 border-background animate-pulse" />
+          )}
+          {vectorStatus === "error" && (
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-background" />
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px] h-[500px] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Manage Research Papers
+          <DialogTitle className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Manage Research Papers
+            </div>
+            
+            <div className="flex items-center gap-3 pr-8">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50 border text-xs font-medium">
+                {vectorStatus === "ready" ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+                    <span className="text-muted-foreground">Context Ready</span>
+                  </>
+                ) : vectorStatus === "processing" ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 text-blue-500 animate-spin" />
+                    <span className="text-muted-foreground">Building Context...</span>
+                  </>
+                ) : vectorStatus === "error" ? (
+                  <>
+                    <AlertCircle className="h-3.5 w-3.5 text-red-500" />
+                    <span className="text-muted-foreground">Error Building Context</span>
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Not Started</span>
+                  </>
+                )}
+              </div>
+              
+              <Button 
+                size="sm" 
+                onClick={handleBuildContext} 
+                disabled={isBuilding || vectorStatus === "processing" || selectedPaperIds.length === 0}
+                className="gap-2"
+              >
+                {vectorStatus === "processing" || isBuilding ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Database className="h-3.5 w-3.5" />
+                )}
+                Build Context
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
 

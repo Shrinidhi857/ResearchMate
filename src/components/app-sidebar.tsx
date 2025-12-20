@@ -36,7 +36,6 @@ interface User {
 
 // Menu items.
 const items = [
-  { title: "Search", url: "#", icon: Search },
   { title: "Home", url: "/", icon: Home },
   { title: "Project", url: "/project", icon: FolderKanban },
 
