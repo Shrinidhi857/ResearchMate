@@ -9,7 +9,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
-import { Pencil, Check, X, UserPlus, Download, FileText } from "lucide-react";
+import { Pencil, Check, X, UserPlus, Download, FileText, Loader2, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -103,7 +103,7 @@ const LaTeXEditor = ({
 This is a simple LaTeX document to test the compiler.
 
 \\section{Mathematics}
-Here’s an inline equation: $E = mc^2$
+Here's an inline equation: $E = mc^2$
 
 And a displayed equation:
 \\[
@@ -120,7 +120,7 @@ And a displayed equation:
 \\end{document}`);
 
   // ... (latexCode state)
-  const [activeTab, setActiveTab] = useState<"code" | "preview" | "agent">("code");
+  const [activeTab, setActiveTab] = useState<"code" | "preview" | "agent" | "history">("code");
   const [compiledHTML, setCompiledHTML] = useState("");
   const [isCompiling, setIsCompiling] = useState(false);
   
@@ -132,6 +132,57 @@ And a displayed equation:
   const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const clientId = useRef(`client_${Math.random().toString(36).substr(2, 9)}`);
+
+  // Document Selection State
+  interface Document {
+    doc_id: string;
+    title: string;
+  }
+  const [availableDocuments, setAvailableDocuments] = useState<Document[]>([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState<string[]>([]);
+  const [isLoadingDocuments, setIsLoadingDocuments] = useState(false);
+
+  // Version History State
+  interface HistoryEntry {
+    timestamp: number;
+    code: string;
+    description?: string;
+  }
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  
+  // Initialize history with initial code
+  useEffect(() => {
+    if (history.length === 0 && latexCode) {
+      setHistory([{ timestamp: Date.now(), code: latexCode, description: "Initial version" }]);
+    }
+  }, []);
+
+  // Debounced history update
+  useEffect(() => {
+    const timer = setTimeout(() => {
+        setHistory(prev => {
+            const lastEntry = prev[prev.length - 1];
+            // Only add if code has changed significantly or enough time passed, 
+            // but for now let's just check if it's different from the last entry
+            if (!lastEntry || lastEntry.code !== latexCode) {
+                 return [...prev, { timestamp: Date.now(), code: latexCode, description: "Auto-save" }];
+            }
+            return prev;
+        });
+    }, 2000); // Wait 2 seconds of inactivity
+
+    return () => clearTimeout(timer);
+  }, [latexCode]);
+
+  const handleRevert = (entry: HistoryEntry) => {
+      if (confirm("Are you sure you want to revert to this version? Current changes will be saved in history before reverting.")) {
+          setLatexCode(entry.code);
+          // The revert itself will trigger the debounced save, effectively saving the state BEFORE revert as an "Auto-save" 
+          // and then eventually the reverted state as another "Auto-save". 
+          // Use a customized description if desired, but simple "Auto-save" is fine for now on the debouncer.
+      }
+  };
+
 
   // ... (rest of state)
   const [isLoading, setIsLoading] = useState(false);
@@ -234,7 +285,8 @@ And a displayed equation:
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && agentPrompt.trim()) {
       const payload = {
         type: "USER_MESSAGE",
-        content: agentPrompt
+        content: agentPrompt,
+        document_ids: selectedDocumentIds.length > 0 ? selectedDocumentIds : undefined
       };
       wsRef.current.send(JSON.stringify(payload));
       setAgentPrompt("");
@@ -295,12 +347,49 @@ And a displayed equation:
     return () => clearTimeout(timer);
   }, [compiledHTML, compilationVersion, agentStatus, latexCode]);
 
-  // Fetch paper content when editor opens
+  // Fetch paper content and documents when editor opens
   useEffect(() => {
     if (isOpen && projectId) {
       fetchPaper();
+      fetchPaperBucketDocuments();
     }
   }, [isOpen, projectId]);
+
+  // Fetch paper bucket documents
+  const fetchPaperBucketDocuments = async () => {
+    if (!projectId) return;
+    setIsLoadingDocuments(true);
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/paper-bucket`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch paper bucket");
+      }
+
+      const data = await response.json();
+      const paperIds = data.paper_ids || [];
+      
+      // Fetch document details
+      if (paperIds.length > 0) {
+        const docsResponse = await fetch(`${API_URL}/api/documents/summary`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (docsResponse.ok) {
+          const allDocs: Document[] = await docsResponse.json();
+          const bucketDocs = allDocs.filter(doc => paperIds.includes(doc.doc_id));
+          setAvailableDocuments(bucketDocs);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching paper bucket documents:", error);
+    } finally {
+      setIsLoadingDocuments(false);
+    }
+  };
 
   const fetchPaper = async () => {
     setIsLoading(true);
@@ -537,6 +626,7 @@ And a displayed equation:
                 <TabsList>
                     <TabsTrigger value="code">Code</TabsTrigger>
                     <TabsTrigger value="preview">Preview</TabsTrigger>
+                    <TabsTrigger value="history">History</TabsTrigger>
                     <TabsTrigger value="agent" className="gap-2">
                       <span className="relative flex h-2 w-2">
                         <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${wsConnected ? "bg-green-400" : "bg-red-400"}`}></span>
@@ -600,6 +690,54 @@ And a displayed equation:
                            </p>
                         </div>
                         
+                        {/* Document Selector */}
+                        {availableDocuments.length > 0 && (
+                          <div className="bg-background border rounded-lg p-4 shadow-sm">
+                            <h4 className="font-semibold mb-2 text-sm flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              Select Documents for Context
+                            </h4>
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Choose which documents from your paper bucket to include as context for the agent.
+                            </p>
+                            {isLoadingDocuments ? (
+                              <div className="flex items-center justify-center py-4">
+                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                              </div>
+                            ) : (
+                              <ScrollArea className="max-h-[150px]">
+                                <div className="space-y-2">
+                                  {availableDocuments.map((doc) => (
+                                    <label
+                                      key={doc.doc_id}
+                                      className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedDocumentIds.includes(doc.doc_id)}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedDocumentIds([...selectedDocumentIds, doc.doc_id]);
+                                          } else {
+                                            setSelectedDocumentIds(selectedDocumentIds.filter(id => id !== doc.doc_id));
+                                          }
+                                        }}
+                                        className="rounded border-gray-300"
+                                      />
+                                      <span className="text-sm flex-1 truncate">{doc.title}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </ScrollArea>
+                            )}
+                            {selectedDocumentIds.length > 0 && (
+                              <div className="mt-2 text-xs text-muted-foreground">
+                                {selectedDocumentIds.length} document{selectedDocumentIds.length !== 1 ? 's' : ''} selected
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
                         {agentStatus !== "idle" && (
                           <div className={`p-3 rounded-lg text-sm ${
                             agentStatus === "error" ? "bg-red-100 text-red-800 border-red-200" : "bg-primary/10 text-primary border-primary/20"
@@ -638,6 +776,51 @@ And a displayed equation:
                         </Button>
                       </div>
                    </div>
+                </TabsContent>
+
+                <TabsContent value="history" className="h-full mt-0 data-[state=active]:block hidden">
+                    <div className="flex flex-col h-full bg-muted/30 p-4 overflow-auto">
+                        <div className="bg-background border rounded-lg p-4 shadow-sm mb-4">
+                            <h3 className="font-semibold mb-2 flex items-center gap-2">
+                                <History className="h-4 w-4" />
+                                Version History
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                Local history of your changes. Revert to a previous version if needed.
+                            </p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {history.slice().reverse().map((entry, index) => (
+                                <div key={entry.timestamp} className="bg-background border rounded-lg p-3 shadow-sm flex items-center justify-between">
+                                    <div className="overflow-hidden mr-4">
+                                        <div className="text-sm font-medium">
+                                            {entry.description || "Version"}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {new Date(entry.timestamp).toLocaleTimeString()} - {new Date(entry.timestamp).toLocaleDateString()}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground mt-1 truncate font-mono bg-muted p-1 rounded">
+                                            {entry.code.substring(0, 50).replace(/\n/g, " ")}...
+                                        </div>
+                                    </div>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        onClick={() => handleRevert(entry)}
+                                        className="shrink-0"
+                                    >
+                                        Revert
+                                    </Button>
+                                </div>
+                            ))}
+                            {history.length === 0 && (
+                                <div className="text-center text-muted-foreground py-8">
+                                    No history yet. Start typing to create versions.
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </TabsContent>
              </div>
             </Tabs>
