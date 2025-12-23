@@ -82,10 +82,12 @@ const LaTeXEditor = ({
   isOpen,
   onClose,
   projectId,
+  projectTitle,
 }: {
   isOpen: boolean;
   onClose: () => void;
   projectId?: string;
+  projectTitle?: string;
 }) => {
   const [latexCode, setLatexCode] = useState(`\\documentclass{article}
 \\usepackage{amsmath}
@@ -118,13 +120,180 @@ And a displayed equation:
 \\end{document}`);
 
   // ... (latexCode state)
-  const [activeTab, setActiveTab] = useState<"code" | "preview">("code");
+  const [activeTab, setActiveTab] = useState<"code" | "preview" | "agent">("code");
   const [compiledHTML, setCompiledHTML] = useState("");
   const [isCompiling, setIsCompiling] = useState(false);
+  
+  // Agent State
+  const [agentPrompt, setAgentPrompt] = useState("");
+  const [agentStatus, setAgentStatus] = useState<"idle" | "thinking" | "generating" | "fixing" | "success" | "error">("idle");
+  const [agentMessage, setAgentMessage] = useState("");
+  const [compilationAttempts, setCompilationAttempts] = useState(0);
+  const [wsConnected, setWsConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const clientId = useRef(`client_${Math.random().toString(36).substr(2, 9)}`);
+
   // ... (rest of state)
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  
+  // Robust Synchronization State
+  const lastCodeReported = useRef<string>("");
+  const compilationFinished = useRef<boolean>(true);
+  const [compilationVersion, setCompilationVersion] = useState(0);
+  const lastReportedVersion = useRef(0);
+
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
+
+  // LaTeX Agent WebSocket logic
+  useEffect(() => {
+    if (isOpen && projectId && (!wsRef.current || wsRef.current.readyState === WebSocket.CLOSED)) {
+      connectToAgent();
+    }
+    return () => {
+      if (wsRef.current) {
+        console.log("Cleaning up WebSocket connection");
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+  }, [isOpen, projectId, reconnectTrigger]);
+
+  const connectToAgent = () => {
+    const wsUrl = `ws://localhost:8001/ws/${clientId.current}/${projectId}`;
+    console.log("Attempting to connect to LaTeX Agent:", wsUrl);
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log("WebSocket Connection Opened: LaTeX Agent");
+      setWsConnected(true);
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("WebSocket Message Received:", data);
+
+      switch (data.type) {
+        case "CONNECTED":
+          setAgentMessage(data.content);
+          break;
+        case "AGENT_THINKING":
+          setAgentStatus("thinking");
+          setAgentMessage(data.content);
+          break;
+        case "CODE_GENERATED":
+          console.log(`Agent generated code (length: ${data.content?.length || 0}). Content preview:`, data.content?.substring(0, 100));
+          setAgentStatus("generating");
+          lastCodeReported.current = data.content; // Track what the agent sent
+          setLatexCode(data.content);
+          setCompilationAttempts(data.attempt);
+          break;
+        case "COMPILATION_COMPLETE":
+          setAgentStatus("success");
+          setAgentMessage(data.content);
+          setCompilationAttempts(data.total_attempts);
+          break;
+        case "ERROR":
+          console.error("Agent reported error:", data.content);
+          setAgentStatus("error");
+          setAgentMessage(data.content);
+          break;
+        case "SAVE_STATUS":
+          console.log("Save status received:", data.success);
+          alert(data.content);
+          break;
+        default:
+          console.log("Unhandled message type:", data.type);
+          break;
+      }
+    };
+
+    ws.onclose = (event) => {
+      console.log("WebSocket Connection Closed:", event.code, event.reason, "Clean:", event.wasClean);
+      setWsConnected(false);
+      wsRef.current = null;
+      
+      // Auto-reconnect if not a clean close and editor is still open
+      if (!event.wasClean) {
+        console.log("Attempting auto-reconnect in 3s...");
+        setTimeout(() => setReconnectTrigger(prev => prev + 1), 3000);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket Connection Error. This usually means the server at localhost:8001 is not running or unreachable.", error);
+      setAgentStatus("error");
+      setAgentMessage("Connection error. Is the agent server running on port 8001?");
+    };
+
+    wsRef.current = ws;
+  };
+
+  const sendAgentRequest = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && agentPrompt.trim()) {
+      const payload = {
+        type: "USER_MESSAGE",
+        content: agentPrompt
+      };
+      wsRef.current.send(JSON.stringify(payload));
+      setAgentPrompt("");
+      setAgentStatus("thinking");
+    } else {
+      if (!wsConnected) {
+          setReconnectTrigger(prev => prev + 1);
+      }
+    }
+  };
+
+  const saveToPaperAgent = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: "SAVE_TO_PAPER",
+        content: latexCode
+      }));
+    }
+  };
+
+  // Debounced Compilation Error reporting back to agent
+  useEffect(() => {
+    // Only report if we are actively in an agent flow
+    if (agentStatus !== "generating" && agentStatus !== "fixing") return;
+    
+    // Only report if a NEW compilation has actually finished
+    if (compilationVersion === lastReportedVersion.current) return;
+    
+    // Only report if the code matches what we last received (avoid reporting intermediate user edits during agent flow)
+    if (lastCodeReported.current !== latexCode && lastCodeReported.current !== "") {
+        console.log("Code mismatch, skipping auto-report. Received:", lastCodeReported.current?.length, "Current:", latexCode.length);
+        return;
+    }
+
+    const timer = setTimeout(() => {
+        if (compiledHTML.includes("Compilation Error")) {
+            const errorLogs = compiledHTML.match(/<pre>(.*?)<\/pre>/s)?.[1] || "Compilation failed";
+            console.log("Reporting EXECUTION_ERROR to agent...");
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({
+                    type: "EXECUTION_ERROR",
+                    logs: errorLogs
+                }));
+                setAgentStatus("fixing");
+                lastReportedVersion.current = compilationVersion;
+            }
+        } else if (compiledHTML && !compiledHTML.includes("Compilation Error")) {
+            console.log("Reporting EXECUTION_SUCCESS to agent version:", compilationVersion);
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                 wsRef.current.send(JSON.stringify({
+                    type: "EXECUTION_SUCCESS"
+                }));
+                 lastReportedVersion.current = compilationVersion;
+            }
+        }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [compiledHTML, compilationVersion, agentStatus, latexCode]);
 
   // Fetch paper content when editor opens
   useEffect(() => {
@@ -188,6 +357,14 @@ And a displayed equation:
 
   // Load LaTeX.js only once
   useEffect(() => {
+    // 🛠️ SHIM: Fix "ReferenceError: require is not defined" in browser/Vite
+    if (typeof (window as any).require === 'undefined') {
+      (window as any).require = (name: string) => {
+        console.warn(`Latex.js tried to require package "${name}". Returning empty module to avoid crash.`);
+        return {};
+      };
+    }
+
     const loadLatexJS = async () => {
       if (!window.latexjs) {
         const script = document.createElement("script");
@@ -214,30 +391,47 @@ And a displayed equation:
 
   const compileLatex = async () => {
     setIsCompiling(true);
+    compilationFinished.current = false;
+    
+    // Capture silent console errors from the library
+    let capturedSilentErrors = "";
+    const originalConsoleError = console.error;
+    console.error = (...args: any[]) => {
+      capturedSilentErrors += args.join(" ") + "\n";
+      originalConsoleError.apply(console, args);
+    };
+
     try {
-      // ... (Rest of compileLatex logic remains the same)
       if (!window.latexjs) {
-        const script = document.createElement("script");
-        script.src =
-          "https://cdn.jsdelivr.net/npm/latex.js@0.12.6/dist/latex.min.js";
-        script.async = true;
-        document.head.appendChild(script);
-        await new Promise<void>((resolve, reject) => {
-          script.onload = () => resolve();
-          script.onerror = (e) => reject(e);
-        });
+        throw new Error("LaTeX.js library not loaded.");
       }
 
+      console.log("Compiling LaTeX code length:", latexCode.length);
       const generator = new window.latexjs.HtmlGenerator({ hyphenate: false });
       window.latexjs.parse(latexCode, { generator });
 
+      // If library logged "error loading package" but didn't throw, we force an error
+      if (capturedSilentErrors.includes("error loading package") || capturedSilentErrors.includes("ReferenceError")) {
+          console.warn("Caught silent compilation error:", capturedSilentErrors);
+          throw new Error(capturedSilentErrors);
+      }
+
       const frag = generator.domFragment();
+      // headFrag often contains relative links like js/base.js which fail in srcdoc.
       const headFrag = generator.stylesAndScripts();
+      
+      // Filter out relative scripts that cause 404s
+      const scripts = headFrag.querySelectorAll('script');
+      scripts.forEach((s: any) => {
+          if (s.src && !s.src.startsWith('http') && !s.src.startsWith('https')) {
+              console.log("Removing relative script to avoid 404:", s.src);
+              s.remove();
+          }
+      });
 
       const container = document.createElement("div");
       container.appendChild(headFrag);
       container.appendChild(frag);
-
       const htmlBody = container.innerHTML;
 
       const htmlContent = `<!DOCTYPE html>
@@ -260,33 +454,40 @@ And a displayed equation:
       setCompiledHTML(htmlContent);
     } catch (err: unknown) {
       const error = err as Error;
+      const errorMessage = error.message || String(err);
       const errorHTML = `<!DOCTYPE html>
 <html>
   <head><meta charset="UTF-8"><style>body{font-family:monospace;padding:20px;background:#fff3cd;color:#856404}pre{white-space:pre-wrap}</style></head>
-  <body><h3>Compilation Error</h3><pre>${
-    (error && error.message) || String(err)
-  }</pre></body>
+  <body><h3>Compilation Error</h3><pre>${errorMessage}</pre></body>
 </html>`;
       setCompiledHTML(errorHTML);
     } finally {
+      console.error = originalConsoleError;
       setIsCompiling(false);
+      compilationFinished.current = true;
+      setCompilationVersion(v => v + 1);
     }
   };
 
   const downloadPDF = () => {
-    // Note: The element with ID 'latex-output' is missing in your code,
-    // so this function won't work correctly unless you adjust the iframe's wrapper.
-    const latexOutput = document.getElementById("latex-output");
-    if (!latexOutput) return;
+    const iframe = iframeRef.current;
+    if (!iframe || !iframe.contentDocument) {
+        alert("Preview not ready for download.");
+        return;
+    }
+    
+    // We target the body of the iframe content for PDF generation
+    const element = iframe.contentDocument.body;
 
     const opt = {
       margin: 0.5,
-      filename: "document.pdf",
-      html2canvas: { scale: 2 },
+      filename: `${projectTitle || 'document'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
     };
 
-    html2pdf().from(latexOutput).set(opt).save();
+    html2pdf().from(element).set(opt).save();
   };
 
   return (
@@ -306,6 +507,29 @@ And a displayed equation:
           </div>
         </div>
         
+        {/* Agent Status Bar */}
+        {(agentStatus !== "idle" || wsConnected || !wsConnected) && (
+          <div className={`px-4 py-1 text-xs border-b flex justify-between items-center ${
+            agentStatus === "thinking" || agentStatus === "fixing" ? "bg-blue-50 text-blue-700 animate-pulse" : 
+            agentStatus === "success" ? "bg-green-50 text-green-700" :
+            agentStatus === "error" ? "bg-red-50 text-red-700" : "bg-muted text-muted-foreground"
+          }`}>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${wsConnected ? "bg-green-500" : "bg-red-500 animate-pulse"}`}></span>
+              <span>{agentMessage || (wsConnected ? "Agent Connected" : "Connecting to localhost:8001...")}</span>
+              {compilationAttempts > 0 && <span>(Attempt {compilationAttempts})</span>}
+            </div>
+            <div className="flex items-center gap-2">
+                {!wsConnected && (
+                    <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2 bg-background border" onClick={() => setReconnectTrigger(p => p+1)}>
+                        Retry Connection
+                    </Button>
+                )}
+                {agentStatus === "success" && <span className="font-bold">✓</span>}
+            </div>
+          </div>
+        )}
+        
         {/* Tabs and Content */}
         <div className="flex-1 overflow-hidden flex flex-col p-2">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "code" | "preview")} className="flex flex-col h-full">
@@ -313,6 +537,13 @@ And a displayed equation:
                 <TabsList>
                     <TabsTrigger value="code">Code</TabsTrigger>
                     <TabsTrigger value="preview">Preview</TabsTrigger>
+                    <TabsTrigger value="agent" className="gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${wsConnected ? "bg-green-400" : "bg-red-400"}`}></span>
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${wsConnected ? "bg-green-500" : "bg-red-500"}`}></span>
+                      </span>
+                      LaTeX Agent
+                    </TabsTrigger>
                 </TabsList>
                  <div className="flex items-center gap-2">
                     <Button
@@ -322,6 +553,9 @@ And a displayed equation:
                       size="sm"
                     >
                       {isCompiling ? "Compiling..." : "Recompile"}
+                    </Button>
+                    <Button onClick={saveToPaperAgent} variant="secondary" size="sm" className="gap-2">
+                       Save to Project
                     </Button>
                     <Button onClick={downloadPDF} size="sm" className="gap-2">
                       <Download className="h-4 w-4" /> Download
@@ -354,6 +588,56 @@ And a displayed equation:
                             title="LaTeX Preview"
                         />
                     </div>
+                </TabsContent>
+
+                <TabsContent value="agent" className="h-full mt-0 data-[state=active]:block hidden">
+                   <div className="flex flex-col h-full bg-muted/30 p-4">
+                      <div className="flex-1 overflow-auto mb-4 space-y-4">
+                        <div className="bg-background border rounded-lg p-4 shadow-sm">
+                           <h3 className="font-semibold mb-2">How can I help?</h3>
+                           <p className="text-sm text-muted-foreground">
+                              Describe the LaTeX document or changes you want. I can generate sections, tables, math formulas, and automatically fix compilation errors.
+                           </p>
+                        </div>
+                        
+                        {agentStatus !== "idle" && (
+                          <div className={`p-3 rounded-lg text-sm ${
+                            agentStatus === "error" ? "bg-red-100 text-red-800 border-red-200" : "bg-primary/10 text-primary border-primary/20"
+                          } border`}>
+                            <strong>Agent:</strong> {agentMessage}
+                            {compilationAttempts > 0 && <p className="mt-1 text-xs opacity-70 italic">Attempting to compile and fix... (Attempt {compilationAttempts})</p>}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Label htmlFor="agent-prompt" className="sr-only">Request</Label>
+                          <textarea
+                            id="agent-prompt"
+                            placeholder="e.g., Create a research paper structure with a table of contents and a math section..."
+                            className="w-full min-h-[100px] p-3 rounded-md border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                            value={agentPrompt}
+                            onChange={(e) => setAgentPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                if (wsConnected && agentPrompt.trim()) {
+                                    sendAgentRequest();
+                                }
+                              }
+                            }}
+                          />
+                        </div>
+                        <Button 
+                          onClick={sendAgentRequest} 
+                          disabled={!agentPrompt.trim() || !wsConnected || agentStatus === "thinking" || agentStatus === "fixing"}
+                          className="h-10"
+                        >
+                          Send
+                        </Button>
+                      </div>
+                   </div>
                 </TabsContent>
              </div>
             </Tabs>
@@ -784,11 +1068,12 @@ function ProjectPage() {
        
        {/* Editor Panel */}
        {isLatexEditorOpen && (
-        <LaTeXEditor
+          <LaTeXEditor
             isOpen={isLatexEditorOpen}
             onClose={() => setIsLatexEditorOpen(false)}
             projectId={projectId}
-        />
+            projectTitle={projectTitle}
+          />
        )}
       </SidebarInset>
 
