@@ -14,6 +14,7 @@ import reportIcon from "../assets/report.png";
 import analyseIcon from "../assets/Analyse.png";
 import askIcon from "../assets/ask-doubt.png";
 import contradictionIcon from "../assets/contradiction.png";
+import logo from "@/assets/logo.png";
 
 interface Tutorial {
   id: number;
@@ -97,13 +98,11 @@ const ResearchMateDashboard: React.FC = () => {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-primary" />
+             <img src={logo} className="w-6 h-6 rounded-2xl" />
               <span className="text-xl font-semibold text-foreground">
                 ResearchMate
               </span>
-              <Badge variant="secondary" className="ml-2">
-                Beta
-              </Badge>
+              
             </div>
             <nav className="flex items-center gap-6">
               <Button
@@ -143,7 +142,7 @@ const ResearchMateDashboard: React.FC = () => {
               style={{ left: "50%", top: "0%", transform: "translateX(-50%)" }}
             ></div>
           </div>
-
+          
           {/* Foreground Content */}
           <div className="relative z-10">
             <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4">

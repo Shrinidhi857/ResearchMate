@@ -89,13 +89,36 @@ const LaTeXEditor = ({
   projectId?: string;
   projectTitle?: string;
 }) => {
-  const [latexCode, setLatexCode] = useState(`\\documentclass{article}
-\\usepackage{amsmath}
 
+  const [user, setUser] = useState<User | null>(null);
+  
+    useEffect(() => {
+      const fetchUser = async () => {
+        try {
+          const token = localStorage.getItem("authToken");
+          if (!token) return;
+  
+          const response = await fetch(`${API_URL}/api/user`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+  
+          if (!response.ok) throw new Error("Failed to fetch user");
+  
+          const data = await response.json();
+          setUser(data);
+        } catch (err) {
+          console.error("Error fetching user:", err);
+        }
+      };
+  
+      fetchUser();
+    }, []);
+
+  const [latexCode, setLatexCode] = useState(`\\documentclass{article}
 \\begin{document}
 
 \\title{Sample LaTeX Document}
-\\author{Shrinidhi Achar}
+\\author{${user?.first_name || "Unknown"} ${user?.last_name || "User"}}
 \\date{\\today}
 \\maketitle
 
@@ -558,26 +581,60 @@ And a displayed equation:
     }
   };
 
-  const downloadPDF = () => {
-    const iframe = iframeRef.current;
-    if (!iframe || !iframe.contentDocument) {
-        alert("Preview not ready for download.");
-        return;
+  const downloadPDF = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      alert("Please log in first");
+      return;
     }
     
-    // We target the body of the iframe content for PDF generation
-    const element = iframe.contentDocument.body;
-
-    const opt = {
-      margin: 0.5,
-      filename: `${projectTitle || 'document'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
-    };
-
-    html2pdf().from(element).set(opt).save();
-  };
+    if (!projectId) {
+      alert("No project selected");
+      return;
+    }
+    
+    // ✅ Use the simple GET endpoint - no LaTeX required!
+    const response = await fetch(`${API_URL}/api/projects/${projectId}/generate-pdf`, {
+      method: 'GET',  // Changed from POST to GET
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+      // No body needed - it reads from database
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(`PDF generation failed: ${errorData.error}`);
+      console.error('PDF generation error:', errorData);
+      return;
+    }
+    
+    const blob = await response.blob();
+    
+    if (blob.size === 0) {
+      alert('PDF is empty. Please make sure there is content in the paper.');
+      return;
+    }
+    
+    // Download the PDF
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectTitle || 'document'}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    alert('PDF downloaded successfully!');
+    
+  } catch (error) {
+    console.error('Error downloading PDF:', error);
+    alert('Failed to generate PDF. Please try again.');
+  }
+};
 
   return (
     <div className="h-full flex flex-col border-l bg-background w-[50%] shrink-0 transition-all duration-300 ease-in-out shadow-xl z-20">
@@ -644,9 +701,9 @@ And a displayed equation:
                     >
                       {isCompiling ? "Compiling..." : "Recompile"}
                     </Button>
-                    <Button onClick={saveToPaperAgent} variant="secondary" size="sm" className="gap-2">
+                    {/* <Button onClick={saveToPaperAgent} variant="secondary" size="sm" className="gap-2">
                        Save to Project
-                    </Button>
+                    </Button> */}
                     <Button onClick={downloadPDF} size="sm" className="gap-2">
                       <Download className="h-4 w-4" /> Download
                     </Button>
@@ -683,16 +740,10 @@ And a displayed equation:
                 <TabsContent value="agent" className="h-full mt-0 data-[state=active]:block hidden">
                    <div className="flex flex-col h-full bg-muted/30 p-4">
                       <div className="flex-1 overflow-auto mb-4 space-y-4">
-                        <div className="bg-background border rounded-lg p-4 shadow-sm">
-                           <h3 className="font-semibold mb-2">How can I help?</h3>
-                           <p className="text-sm text-muted-foreground">
-                              Describe the LaTeX document or changes you want. I can generate sections, tables, math formulas, and automatically fix compilation errors.
-                           </p>
-                        </div>
-                        
+          
                         {/* Document Selector */}
                         {availableDocuments.length > 0 && (
-                          <div className="bg-background border rounded-lg p-4 shadow-sm">
+                          <div className="bg-background border rounded-lg p-4 shadow-sm overflow-auto">
                             <h4 className="font-semibold mb-2 text-sm flex items-center gap-2">
                               <FileText className="h-4 w-4" />
                               Select Documents for Context
@@ -876,33 +927,31 @@ function ProjectPage() {
 
 
 
+  const fetchUsers = async () => {
+    // Use projectId from URL param, or fallback to a default for testing
+    const id = projectId || "default-project-id";
+    
+    try {
+      const token = localStorage.getItem("authToken");
+      const response = await fetch(`${API_URL}/api/projects/${id}/top-users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
+
+      const data = await response.json();
+      setUsers(data.users || []);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      // Set empty array on error
+      setUsers([]);
+    }
+  };
+
   // Fetch users when component mounts or projectId changes
   useEffect(() => {
-    const fetchUsers = async () => {
-      // Use projectId from URL param, or fallback to a default for testing
-      const id = projectId || "default-project-id";
-      
-      try {
-        const token = localStorage.getItem("authToken");
-        const response = await fetch(`${API_URL}/api/projects/${id}/top-users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch users");
-        }
-
-        const data = await response.json();
-        setUsers(data.users || []);
-      } catch (err) {
-        console.error("Error fetching users:", err);
-        // Set empty array on error
-        setUsers([]);
-      } finally {
-        // No isLoadingUsers state to set
-      }
-    };
-
     fetchUsers();
     fetchProjectDetails();
     if (projectId) {
@@ -912,9 +961,122 @@ function ProjectPage() {
 
 
 
+  // Helper to parse JWT
+  const getUserEmailFromToken = (): string | null => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.email || payload.sub || null;
+    } catch (e) {
+      console.error("Error parsing token:", e);
+      return null;
+    }
+  };
+
+  const fetchMessages = async () => {
+    if (!projectId) return;
+    try {
+      const token = localStorage.getItem("authToken");
+      const userEmail = getUserEmailFromToken();
+
+      const [msgsResponse, resResponse] = await Promise.all([
+        fetch(`${API_URL}/api/projects/${projectId}/messages`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_URL}/api/projects/${projectId}/responses`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
+      
+
+      let allMessages: any[] = [];
+
+      if (msgsResponse.ok) {
+        const msgs = await msgsResponse.json();
+        const mappedMsgs = msgs.map((m: any) => ({
+          id: m.id || `msg-${m.message_number}`,
+          text: m.message_content,
+          isOutgoing: m.message_sender === userEmail, 
+          timestamp: m.created_at || new Date().toISOString(),
+          type: 'message'
+        }));
+        allMessages = [...allMessages, ...mappedMsgs];
+      }
+
+      if (resResponse.ok) {
+        const resps = await resResponse.json();
+        const mappedResps = resps.map((r: any) => ({
+          id: r.response_id || `res-${Math.random()}`,
+          text: r.summary,
+          isOutgoing: false, // Treat responses as incoming (AI/System) for now, or check logical flow
+          timestamp: r.created_at || new Date().toISOString(),
+          type: 'response'
+        }));
+        allMessages = [...allMessages, ...mappedResps];
+      }
+
+      // Sort by timestamp if possible, otherwise keep order
+      // We assume backend might not send created_at for messages based on snippet, 
+      // but usually it does. If not, we rely on array order.
+      // However, merging two lists requires a sort key.
+      // If no timestamp, we just concat? No, they will be out of order.
+      // I'll assume implicit ordering or timestamps are present.
+      // For safety, I'll sorting by timestamp string.
+      allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+      setMessages(allMessages);
+
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  // Run on mount
+  useEffect(() => {
+    if (projectId) {
+      fetchMessages();
+    }
+  }, [projectId]);
+
+  const saveMessageToDB = async (content: string) => {
+    if (!projectId) return;
+    try {
+      const token = localStorage.getItem("authToken");
+      await fetch(`${API_URL}/api/projects/${projectId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
+      });
+    } catch (e) {
+      console.error("Failed to save message:", e);
+    }
+  };
+
+  const saveResponseToDB = async (summary: string) => {
+    if (!projectId) return;
+    try {
+      const token = localStorage.getItem("authToken");
+      await fetch(`${API_URL}/api/projects/${projectId}/responses`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ summary }),
+      });
+    } catch (e) {
+      console.error("Failed to save response:", e);
+    }
+  };
+
   const handleUserPrompt = async (question: string) => {
     // Add user prompt bubble
     addMessage(question, true);
+    saveMessageToDB(question);
 
     try {
       const token = localStorage.getItem("authToken");
@@ -929,9 +1091,13 @@ function ProjectPage() {
 
       if (!response.ok) throw new Error("Failed to fetch response");
       const data = await response.json();
+      
+      const answer = data.answer || "⚠️ No response found";
 
       // Add bot response bubble
-      addMessage(data.answer || "⚠️ No response found", false);
+      addMessage(answer, false);
+      saveResponseToDB(answer);
+
     } catch (error) {
       console.error("Error fetching answer:", error);
       addMessage("⚠️ Error fetching response", false);
@@ -1039,10 +1205,39 @@ function ProjectPage() {
 
 
 
-  const handleInviteCollaborator = () => {
-    console.log("Inviting collaborator:", collaboratorEmail);
-    setCollaboratorEmail("");
-    setIsDialogOpen(false);
+  const handleInviteCollaborator = async () => {
+    if (!collaboratorEmail.trim()) return;
+
+    try {
+      const token = localStorage.getItem("authToken");
+      if (!projectId) {
+        alert("Project ID is missing");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: collaboratorEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to invite collaborator");
+      }
+
+      alert(data.message || "Invitation sent successfully!");
+      setCollaboratorEmail("");
+      setIsDialogOpen(false);
+      fetchUsers(); // Refresh the list of users
+    } catch (error: any) {
+      console.error("Error inviting collaborator:", error);
+      alert(error.message || "An error occurred while inviting the collaborator.");
+    }
   };
 
   return (

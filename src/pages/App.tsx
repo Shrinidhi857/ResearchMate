@@ -50,7 +50,7 @@ export default function App() {
               </div>
             </div>
             <div className="grid grid-col gap-6 w-full">
-              <ResponseHistory />
+              {/* <ResponseHistory /> */}
             </div>
           </div>
         </div>

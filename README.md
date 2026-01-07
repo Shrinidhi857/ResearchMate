@@ -99,6 +99,8 @@ I wanted to create a platform that doesn't just store documents, but actually he
 
 <!-- GETTING STARTED -->
 
+[![Demo Video](https://img.youtube.com/vi/4_Yc5nl-7NM/0.jpg)](https://youtu.be/4_Yc5nl-7NM)
+
 ## Getting Started
 
 Follow these steps to set up Research Mate Frontend locally.
