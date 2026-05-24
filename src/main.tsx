@@ -27,7 +27,7 @@ axios.interceptors.response.use(
       window.location.href = "/login";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 createRoot(document.getElementById("root")!).render(
@@ -46,5 +46,5 @@ createRoot(document.getElementById("root")!).render(
         </Routes>
       </BrowserRouter>
     </ThemeProvider>
-  </StrictMode>
+  </StrictMode>,
 );
