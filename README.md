@@ -1,6 +1,5 @@
 <a id="readme-top"></a>
 
-
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -55,25 +54,22 @@
 
 ## What is ResearchMate ?🤔
 
-
 Hi, I’m Shrinidhi. Like many students, I found myself drowning in a sea of PDFs while working on my academic research. Between managing dozens of papers, tracking my progress, and trying to analyze complex data quickly, I felt overwhelmed. I realized there had to be a better way to work.
 
 That’s why I built Research Mate.
 
-I wanted to create a platform that doesn't just store documents, but actually helps you understand them. By bridging the gap between AI-driven analysis and intelligent document management, Research Mate turns a chaotic folder of PDFs into a streamlined, intuitive workspace. It’s built by a researcher, for researchers. Management. 
+I wanted to create a platform that doesn't just store documents, but actually helps you understand them. By bridging the gap between AI-driven analysis and intelligent document management, Research Mate turns a chaotic folder of PDFs into a streamlined, intuitive workspace. It’s built by a researcher, for researchers. Management.
+
 - **AI-Powered Analysis**:
-  - **Auto Annotation**: Mention the text you want to annotate and the AI will automatically annotate it for you. 
+  - **Auto Annotation**: Mention the text you want to annotate and the AI will automatically annotate it for you.
   - **Auto Tagging**: you write the paragraph and ai will tag papers for you based on the paragraph.
   - **Automated Summarization**: Instantly generate concise summaries to grasp the core concepts of complex papers.
   - **Interactive Q&A Basically RAG**: Chat directly with your documents to extract specific data points or clarify difficult sections.
   - **Intelligent Extraction**: Automatically identify and organize key findings, methodologies, and references.
-  
 - **Comprehensive Document Management**:
   - **Centralized Repository**: Store and manage all your research PDFs, notes, and datasets in one secure location, currently we are limited to the Text files.
   - **Advanced Annotation**: Highlight text and add persistent comments directly within the integrated PDF viewer.
   - **Smart Organization**: Utilize multi-level categorization and automated metadata extraction for effortless retrieval.
-
-
 
 ### Boosting Productivity
 
@@ -89,11 +85,11 @@ I wanted to create a platform that doesn't just store documents, but actually he
 ### Built With
 
 - [![React][React.js]][React-url]
-![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)[![TypeScript][TypeScript]][TypeScript-url]
-[![Vite][Vite]][Vite-url]
-[![TailwindCSS][TailwindCSS]][Tailwind-url]
-[![React Router][ReactRouter]][ReactRouter-url][![Redux][Redux]][Redux-url]
-![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-black?logo=shadcnui&logoColor=white)
+  ![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)[![TypeScript][TypeScript]][TypeScript-url]
+  [![Vite][Vite]][Vite-url]
+  [![TailwindCSS][TailwindCSS]][Tailwind-url]
+  [![React Router][ReactRouter]][ReactRouter-url][![Redux][Redux]][Redux-url]
+  ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-black?logo=shadcnui&logoColor=white)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -247,7 +243,6 @@ If you have a suggestion that would make this better, please fork the repo and c
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- LICENSE -->
@@ -264,13 +259,13 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 shrinidhiachar857@gmail.com
 
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- ACKNOWLEDGMENTS -->
 
 ## Acknowledgments
 
+- [freeCodeCamp](https://github.com/langchain-ai/rag-from-scratch)
 - [React Documentation](https://react.dev/)
 - [Vite Guide](https://vitejs.dev/guide/)
 - [TailwindCSS](https://tailwindcss.com/docs)
