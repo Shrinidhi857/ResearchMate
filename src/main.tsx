@@ -13,6 +13,7 @@ import "@dotlottie/player-component";
 import AnalysisPage from "./pages/AnalysisPage";
 import ProjectPage from "./pages/ProjectPage";
 import ProjectSelectionPage from "./pages/ProjectSelectionPage";
+import AdminPage from "./pages/AdminPage";
 
 function RootApp() {
   const token = localStorage.getItem("authToken");
@@ -39,6 +40,7 @@ createRoot(document.getElementById("root")!).render(
           <Route path="/auth/success" element={<GoogleSuccess />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/analysis" element={<AnalysisPage />} />
+          <Route path="/admin" element={<AdminPage />} />
 
           <Route path="/*" element={<RootApp />} />
           <Route path="/project" element={<ProjectSelectionPage />} />

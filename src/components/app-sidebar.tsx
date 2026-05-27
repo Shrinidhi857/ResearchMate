@@ -6,6 +6,7 @@ import {
   Rocket,
   MessageCircle,
   FolderKanban,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DocumentList } from "./DocumentList";
@@ -45,6 +46,7 @@ const items = [
 
   { title: "RAG Chat", url: "/chat", icon: MessageCircle },
   { title: "NLP Analysis", url: "/analysis", icon: Rocket },
+  { title: "Admin", url: "/admin", icon: Settings },
 ];
 
 export function AppSidebar() {
