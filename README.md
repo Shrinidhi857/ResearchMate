@@ -95,7 +95,11 @@ I wanted to create a platform that doesn't just store documents, but actually he
 
 <!-- GETTING STARTED -->
 
-[![Demo Video](https://img.youtube.com/vi/4_Yc5nl-7NM/0.jpg)](https://youtu.be/4_Yc5nl-7NM)
+## Demo Video
+
+<a href="https://youtu.be/Y_6NvOCi5j8" target="_blank">
+  <img src="https://img.youtube.com/vi/Y_6NvOCi5j8/maxresdefault.jpg" alt="ResearchMate Demo Video" width="100%" style="max-width: 900px; border-radius: 8px; display: block; margin: 20px 0;">
+</a>
 
 ## Getting Started
 
