@@ -92,7 +92,6 @@ function ProjectPage() {
       setUsers(data.users || []);
     } catch (err) {
       console.error("Error fetching users:", err);
-      // Set empty array on error
       setUsers([]);
     }
   };
@@ -208,7 +207,6 @@ function ProjectPage() {
   };
 
   const handleUserPrompt = async (question: string) => {
-    // Add user prompt bubble
     addMessage(question, true);
     saveMessageToDB(question);
 
@@ -227,8 +225,6 @@ function ProjectPage() {
       const data = await response.json();
 
       const answer = data.answer || "⚠️ No response found";
-
-      // Add bot response bubble
       addMessage(answer, false);
       saveResponseToDB(answer);
     } catch (error) {
@@ -260,7 +256,6 @@ function ProjectPage() {
     }
   };
 
-  // Helper function to get user initials
   const getUserInitials = (user: User): string => {
     if (user.first_name) {
       return user.first_name.charAt(0).toUpperCase();
@@ -270,8 +265,6 @@ function ProjectPage() {
     }
     return "?";
   };
-
-  // ... (Handler functions remain the same) ...
 
   const handleEditTitle = () => {
     setTempTitle(projectTitle);
@@ -313,7 +306,6 @@ function ProjectPage() {
       toast.error(
         "Failed to rename project. Please check if you are the owner.",
       );
-      // Optionally keep it in edit mode if failed
     }
   };
 
@@ -375,24 +367,9 @@ function ProjectPage() {
       <AppSidebar />
       <SidebarInset className="flex flex-row overflow-hidden h-screen">
         <div className="flex-1 flex flex-col relative min-w-0 transition-all duration-300">
-          {/* Right Side Icon Sidebar - Keep it or move it? 
-            Original logic had it fixed right. 
-            If Editor opens, it panel slides in from right. 
-            The icon sidebar might overlap or should stay on chat side?
-            "right to the current window" -> Editor takes right side.
-            Let's keep icons in the chat area (left pane) if possible, 
-            or fixed right of SCREEN? 
-            If fixed right of screen, it overlaps editor.
-            Visual fix: Put it inside the Chat flex column or manage z-index.
-            Let's keep it fixed but ensure Z-index is lower than editor? 
-            Or move it into this container.
-        */}
-
-          {/* Header */}
           <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-10 shadow-sm">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            {/* Editable Project Title */}
             <div className="flex items-center gap-2 flex-1">
               {isEditingTitle ? (
                 <div className="flex items-center gap-2">
@@ -468,22 +445,19 @@ function ProjectPage() {
                 </div>
               </TooltipProvider>
             </div>
-            {/* 💡 NEW ELEMENT: Paper Bucket Dialog */}
             <PaperBucketDialog projectId={projectId} />
-            {/* LaTeX Editor Button */}
             <Button
               variant="outline"
               size="sm"
               className="gap-2"
               onClick={() => {
                 setIsLatexEditorOpen(true);
-                setSidebarOpen(false); // Close left sidebar
+                setSidebarOpen(false);
               }}
             >
               <FileText className="h-4 w-4" />
               LaTeX Editor
             </Button>
-            {/* Collaboration Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
@@ -529,7 +503,6 @@ function ProjectPage() {
             </Dialog>
           </header>
 
-          {/* Messages */}
           <ScrollArea className="flex-1 p-4 pb-32 mr-20">
             <div className="space-y-2">
               {messages.map((message) => (
@@ -538,19 +511,7 @@ function ProjectPage() {
             </div>
           </ScrollArea>
 
-          {/* Input + Analysis */}
           <div className="absolute left-4 right-20 bottom-4 z-10">
-            {/* {showAnalysis && (
-            <div className="flex justify-center mb-4">
-              <DocumentAnalysisCard
-                showAnalysis={showAnalysis}
-                setShowAnalysis={setShowAnalysis}
-                analysis={analysis}
-                setAnalysis={setAnalysis}
-                handleSubmit={handleSubmit}
-              />
-            </div>
-          )} */}
             <SearchCard
               showAnalysis={showAnalysis}
               setShowAnalysis={setShowAnalysis}
@@ -560,8 +521,6 @@ function ProjectPage() {
             />
           </div>
         </div>
-
-        {/* Editor Panel */}
         {isLatexEditorOpen && (
           <LaTeXEditor
             isOpen={isLatexEditorOpen}
@@ -571,8 +530,6 @@ function ProjectPage() {
           />
         )}
       </SidebarInset>
-
-      {/* Replaced: LaTeX Editor Overlay is now inline above */}
     </SidebarProvider>
   );
 }

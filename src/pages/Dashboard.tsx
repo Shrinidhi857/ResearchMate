@@ -98,11 +98,10 @@ const ResearchMateDashboard: React.FC = () => {
         <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-             <img src={logo} className="w-6 h-6 rounded-2xl" />
+              <img src={logo} className="w-6 h-6 rounded-2xl" />
               <span className="text-xl font-semibold text-foreground">
                 ResearchMate
               </span>
-              
             </div>
             <nav className="flex items-center gap-6">
               <Button
@@ -118,32 +117,23 @@ const ResearchMateDashboard: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-16 relative z-10">
-        {/* Hero Section */}
         <div className="relative text-center mb-32 py-20">
-          {/* Gradient Background Blobs */}
           <div className="absolute inset-0 -top-40 flex items-center justify-center pointer-events-none overflow-hidden">
-            {/* Purple blob */}
             <div
               className="absolute w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"
               style={{ left: "20%", top: "10%" }}
             ></div>
-
-            {/* Pink blob */}
             <div
               className="absolute w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"
               style={{ right: "20%", top: "20%" }}
             ></div>
-
-            {/* Blue blob */}
             <div
               className="absolute w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"
               style={{ left: "50%", top: "0%", transform: "translateX(-50%)" }}
             ></div>
           </div>
-          
-          {/* Foreground Content */}
+
           <div className="relative z-10">
             <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-4">
               Your intelligent companion for research, analysis, and knowledge
@@ -156,7 +146,6 @@ const ResearchMateDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Getting Started Section */}
         <div className="mb-20">
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold text-foreground mb-3">
@@ -188,7 +177,6 @@ const ResearchMateDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tutorial Videos */}
         <div>
           <div className="text-center mb-10">
             <h2 className="text-3xl font-bold text-foreground mb-3">
@@ -227,7 +215,6 @@ const ResearchMateDashboard: React.FC = () => {
             ))}
           </div>
 
-          {/* Pricing Card */}
           <div className="max-w-3xl mx-auto mt-20">
             <Card className="border-2">
               <CardContent className="p-8">
@@ -264,7 +251,6 @@ const ResearchMateDashboard: React.FC = () => {
         </div>
       </main>
 
-      {/* Add animation styles */}
       <style>{`
         @keyframes blob {
           0% {

@@ -10,11 +10,11 @@ import NavigationBar from "../Layouts/Navbar";
 import { Card } from "../components/ui/card";
 import SearchCard from "../Layouts/searchform";
 import * as React from "react";
-import { useSearchParams } from "react-router-dom"; // ✅ Added
+import { useSearchParams } from "react-router-dom";
 import DocumentAnalysisCard from "../Layouts/DocumentSelectAnalyse";
 import DocumentSelectCard from "../Layouts/DocumentSelectCard";
 import { toast } from "sonner";
-const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
+const API_URL = import.meta.env.VITE_SERVER_API_URL;
 
 const MessageBubble = ({ message }: any) => {
   return (
@@ -36,7 +36,6 @@ const MessageBubble = ({ message }: any) => {
   );
 };
 
-// ChatPage.tsx
 export default function ChatPage() {
   const [searchParams] = useSearchParams();
   const projectId =
@@ -46,20 +45,15 @@ export default function ChatPage() {
   >([]);
   const [showAnalysis, setShowAnalysis] = React.useState(true);
   const [analysis, setAnalysis] = React.useState(false);
-
-  // helper: add new message
   const addMessage = (text: string, isOutgoing: boolean) => {
     setMessages((prev) => [...prev, { id: prev.length + 1, text, isOutgoing }]);
   };
-
   const handleUserPrompt = async (question: string) => {
     if (!projectId) {
       addMessage("⚠️ Please select a project first", false);
       return;
     }
-
     addMessage(question, true);
-
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(`${API_URL}/api/ask`, {
@@ -69,17 +63,15 @@ export default function ChatPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          project_id: projectId, // ✅ Added project_id
+          project_id: projectId,
           question,
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch response");
       }
       const data = await response.json();
-
       addMessage(data.answer || "⚠️ No response found", false);
     } catch (error: any) {
       console.error("Error fetching answer:", error);
@@ -92,10 +84,8 @@ export default function ChatPage() {
       toast.warning("Please select a project first");
       return;
     }
-
     if (selectedDocuments.length > 0) {
       const token = localStorage.getItem("authToken");
-
       try {
         const response = await fetch(`${API_URL}/api/analyse`, {
           method: "POST",
@@ -125,7 +115,6 @@ export default function ChatPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-10 shadow-md">
           <SidebarTrigger className="-ml-1" />
           <Separator
@@ -134,8 +123,6 @@ export default function ChatPage() {
           />
           <NavigationBar />
         </header>
-
-        {/* Messages */}
         <ScrollArea className="flex-1 p-4 pb-32">
           <div className="space-y-2">
             {messages.map((message) => (
@@ -143,8 +130,6 @@ export default function ChatPage() {
             ))}
           </div>
         </ScrollArea>
-
-        {/* Input + Analysis */}
         <div className="absolute left-4 right-4 sticky bottom-0 z-10">
           {showAnalysis && (
             <div className="flex justify-center">
@@ -162,7 +147,7 @@ export default function ChatPage() {
             setShowAnalysis={setShowAnalysis}
             analysis={analysis}
             setAnalysis={setAnalysis}
-            onPrompt={handleUserPrompt} // ✅ pass callback
+            onPrompt={handleUserPrompt}
           />
         </div>
       </SidebarInset>

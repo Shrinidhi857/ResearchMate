@@ -57,28 +57,22 @@ export function AppSidebar() {
       try {
         const token = localStorage.getItem("authToken");
         if (!token) return;
-
         const response = await fetch(`${API_URL}/api/user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!response.ok) throw new Error("Failed to fetch user");
-
         const data = await response.json();
         setUser(data);
       } catch (err) {
         console.error("Error fetching user:", err);
       }
     };
-
     fetchUser();
   }, []);
 
   return (
     <Sidebar>
-      {/* Sidebar content */}
       <SidebarContent className="flex flex-col">
-        {/* Top section */}
         <SidebarGroup>
           <SidebarHeader className="flex flex-row gap-1  items-center">
             <img src={logo} className="w-6 h-6 rounded-2xl" />
@@ -101,15 +95,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Middle area */}
         <h4 className="m-4 text-sm leading-none font-medium">Documents</h4>
-
         <div className="flex-1 overflow-y-auto m-2 scrollbar-hide">
           <DocumentList />
         </div>
       </SidebarContent>
-
-      {/* Footer */}
       <SidebarFooter>
         <div className="space-y-3 p-3 border-t">
           {user?.tokens !== undefined && (

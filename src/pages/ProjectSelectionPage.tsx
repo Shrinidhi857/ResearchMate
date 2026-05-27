@@ -48,8 +48,6 @@ export default function ProjectSelectionPage() {
   const [newProjectTitle, setNewProjectTitle] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Fetch projects when component mounts
   useEffect(() => {
     fetchProjects();
   }, []);
@@ -68,7 +66,6 @@ export default function ProjectSelectionPage() {
 
       const data = await response.json();
       console.log("Projects API response:", data);
-      // Handle both array and object wrapper formats to be safe
       const projectsData = Array.isArray(data) ? data : data.projects || [];
       setProjects(projectsData);
     } catch (err) {
@@ -81,7 +78,6 @@ export default function ProjectSelectionPage() {
 
   const handleCreateProject = async () => {
     if (!newProjectTitle.trim()) return;
-
     setIsCreating(true);
     try {
       const token = localStorage.getItem("authToken");
@@ -102,12 +98,8 @@ export default function ProjectSelectionPage() {
 
       const data = await response.json();
       const newProjectId = data.project_id;
-
-      // Reset form and close dialog
       setNewProjectTitle("");
       setIsCreateDialogOpen(false);
-
-      // Navigate to the new project
       navigate(`/project/${newProjectId}`);
     } catch (err) {
       console.error("Error creating project:", err);
@@ -131,8 +123,6 @@ export default function ProjectSelectionPage() {
       year: "numeric",
     });
   };
-
-  // Filter projects based on search query
   const filteredProjects = projects.filter((project) =>
     project.project_name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
@@ -141,17 +131,13 @@ export default function ProjectSelectionPage() {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4 sticky top-0 z-10">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <h1 className="text-xl font-semibold">My Projects</h1>
         </header>
-
-        {/* Main Content */}
         <ScrollArea className="flex-1">
           <div className="p-6 max-w-7xl mx-auto">
-            {/* Search and Create Section */}
             <div className="flex items-center justify-between mb-6 gap-4">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -221,8 +207,6 @@ export default function ProjectSelectionPage() {
                 </DialogContent>
               </Dialog>
             </div>
-
-            {/* Projects Grid */}
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

@@ -18,7 +18,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-
 const API_URL = import.meta.env.VITE_SERVER_API_URL;
 
 interface DocumentSummary {
