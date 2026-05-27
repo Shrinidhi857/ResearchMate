@@ -33,6 +33,7 @@ import { AvatarFallback } from "@radix-ui/react-avatar";
 import PaperBucketDialog from "../Layouts/PaperBucketDialog";
 import MessageBubble from "../components/MessageBubble";
 import LaTeXEditor from "../Layouts/LaTeXEditor";
+import { toast } from "sonner";
 
 declare global {
   interface Window {
@@ -309,7 +310,9 @@ function ProjectPage() {
       setIsEditingTitle(false);
     } catch (err) {
       console.error("Error renaming project:", err);
-      alert("Failed to rename project. Please check if you are the owner.");
+      toast.error(
+        "Failed to rename project. Please check if you are the owner.",
+      );
       // Optionally keep it in edit mode if failed
     }
   };
@@ -333,7 +336,7 @@ function ProjectPage() {
     try {
       const token = localStorage.getItem("authToken");
       if (!projectId) {
-        alert("Project ID is missing");
+        toast.error("Project ID is missing");
         return;
       }
 
@@ -355,13 +358,13 @@ function ProjectPage() {
         throw new Error(data.error || "Failed to invite collaborator");
       }
 
-      alert(data.message || "Invitation sent successfully!");
+      toast.success(data.message || "Invitation sent successfully!");
       setCollaboratorEmail("");
       setIsDialogOpen(false);
       fetchUsers(); // Refresh the list of users
     } catch (error: any) {
       console.error("Error inviting collaborator:", error);
-      alert(
+      toast.error(
         error.message || "An error occurred while inviting the collaborator.",
       );
     }

@@ -1,7 +1,16 @@
 // src/components/PaperBucketDialog.tsx
 
 import React, { useState, useEffect } from "react";
-import { Plus, X, FileText, Loader2, Database, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Plus,
+  X,
+  FileText,
+  Loader2,
+  Database,
+  CheckCircle2,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,16 +42,16 @@ interface PaperBucketDialogProps {
   projectId?: string;
 }
 
-const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
-  projectId,
-}) => {
+const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({ projectId }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [availablePapers, setAvailablePapers] = useState<Paper[]>([]);
   const [selectedPaperIds, setSelectedPaperIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingBucket, setIsLoadingBucket] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [vectorStatus, setVectorStatus] = useState<"not_started" | "processing" | "ready" | "error">("not_started");
+  const [vectorStatus, setVectorStatus] = useState<
+    "not_started" | "processing" | "ready" | "error"
+  >("not_started");
   const [isBuilding, setIsBuilding] = useState(false);
 
   // Fetch available documents and paper bucket when dialog opens
@@ -95,9 +104,12 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
     setIsLoadingBucket(true);
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${API_URL}/api/projects/${id}/paper-bucket`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `${API_URL}/api/projects/${id}/paper-bucket`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch paper bucket");
@@ -119,9 +131,12 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
 
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${API_URL}/api/projects/${id}/vector-status`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `${API_URL}/api/projects/${id}/vector-status`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!response.ok) return;
 
@@ -139,10 +154,13 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
     setIsBuilding(true);
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${API_URL}/api/projects/${id}/build-context`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `${API_URL}/api/projects/${id}/build-context`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -160,25 +178,28 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
   };
 
   const selectedPapers = availablePapers.filter((paper) =>
-    selectedPaperIds.includes(paper.doc_id)
+    selectedPaperIds.includes(paper.doc_id),
   );
   const unselectedPapers = availablePapers.filter(
-    (paper) => !selectedPaperIds.includes(paper.doc_id)
+    (paper) => !selectedPaperIds.includes(paper.doc_id),
   );
 
   const handleSelectPaper = async (paperId: string) => {
     const id = projectId || "default-project-id";
-    
+
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${API_URL}/api/projects/${id}/paper-bucket/add`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `${API_URL}/api/projects/${id}/paper-bucket/add`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ paper_id: paperId }),
         },
-        body: JSON.stringify({ paper_id: paperId }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error("Failed to add paper to bucket");
@@ -194,7 +215,7 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
 
   const handleRemovePaper = async (paperId: string) => {
     const id = projectId || "default-project-id";
-    
+
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(
@@ -202,7 +223,7 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -240,7 +261,7 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
               <FileText className="h-5 w-5" />
               Manage Research Papers
             </div>
-            
+
             <div className="flex items-center gap-3 pr-8">
               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50 border text-xs font-medium">
                 {vectorStatus === "ready" ? (
@@ -251,12 +272,16 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
                 ) : vectorStatus === "processing" ? (
                   <>
                     <RefreshCw className="h-3.5 w-3.5 text-blue-500 animate-spin" />
-                    <span className="text-muted-foreground">Building Context...</span>
+                    <span className="text-muted-foreground">
+                      Building Context...
+                    </span>
                   </>
                 ) : vectorStatus === "error" ? (
                   <>
                     <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                    <span className="text-muted-foreground">Error Building Context</span>
+                    <span className="text-muted-foreground">
+                      Error Building Context
+                    </span>
                   </>
                 ) : (
                   <>
@@ -265,11 +290,15 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
                   </>
                 )}
               </div>
-              
-              <Button 
-                size="sm" 
-                onClick={handleBuildContext} 
-                disabled={isBuilding || vectorStatus === "processing" || selectedPaperIds.length === 0}
+
+              <Button
+                size="sm"
+                onClick={handleBuildContext}
+                disabled={
+                  isBuilding ||
+                  vectorStatus === "processing" ||
+                  selectedPaperIds.length === 0
+                }
                 className="gap-2"
               >
                 {vectorStatus === "processing" || isBuilding ? (
@@ -289,7 +318,7 @@ const PaperBucketDialog: React.FC<PaperBucketDialogProps> = ({
             <h3 className="p-3 text-sm font-medium bg-muted/50 border-b">
               Add Papers to Bucket
             </h3>
-            
+
             {isLoading || isLoadingBucket ? (
               <div className="flex-1 flex items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

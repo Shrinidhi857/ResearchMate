@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 const API_URL = import.meta.env.VITE_SERVER_API_URL;
 
@@ -41,7 +42,7 @@ export const useProjectUsers = (projectId?: string) => {
     try {
       const token = localStorage.getItem("authToken");
       if (!projectId) {
-        alert("Project ID is missing");
+        toast.error("Project ID is missing");
         return;
       }
 
@@ -63,13 +64,13 @@ export const useProjectUsers = (projectId?: string) => {
         throw new Error(data.error || "Failed to invite collaborator");
       }
 
-      alert(data.message || "Invitation sent successfully!");
+      toast.success(data.message || "Invitation sent successfully!");
       setCollaboratorEmail("");
       setIsDialogOpen(false);
       fetchUsers();
     } catch (error: any) {
       console.error("Error inviting collaborator:", error);
-      alert(
+      toast.error(
         error.message || "An error occurred while inviting the collaborator.",
       );
     }

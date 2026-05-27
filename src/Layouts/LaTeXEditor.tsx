@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Clock,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -288,7 +289,7 @@ And a displayed equation:
           setAgentMessage(data.content);
           break;
         case "SAVE_STATUS":
-          alert(data.content);
+          toast.info(data.content);
           break;
       }
     };
@@ -520,11 +521,11 @@ And a displayed equation:
     try {
       const token = localStorage.getItem("authToken");
       if (!token) {
-        alert("Please log in first");
+        toast.error("Please log in first");
         return;
       }
       if (!projectId) {
-        alert("No project selected");
+        toast.warning("No project selected");
         return;
       }
       const response = await fetch(
@@ -536,12 +537,12 @@ And a displayed equation:
       );
       if (!response.ok) {
         const errorData = await response.json();
-        alert(`PDF generation failed: ${errorData.error}`);
+        toast.error(`PDF generation failed: ${errorData.error}`);
         return;
       }
       const blob = await response.blob();
       if (blob.size === 0) {
-        alert("PDF is empty.");
+        toast.warning("PDF is empty.");
         return;
       }
       const url = window.URL.createObjectURL(blob);
@@ -554,7 +555,7 @@ And a displayed equation:
       document.body.removeChild(a);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
+      toast.error("Failed to generate PDF. Please try again.");
     }
   };
 

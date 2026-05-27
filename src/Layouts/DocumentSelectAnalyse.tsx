@@ -51,7 +51,7 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
 }) => {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [selectedDocuments, setSelectedDocuments] = useState<DocumentSummary[]>(
-    []
+    [],
   );
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState("");
@@ -77,7 +77,7 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
 
   const handleAddDocument = () => {
     const documentToAdd = documents.find(
-      (doc) => doc.title.toLowerCase() === selectedValue.toLowerCase()
+      (doc) => doc.title.toLowerCase() === selectedValue.toLowerCase(),
     );
     if (
       documentToAdd &&
@@ -90,15 +90,15 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
 
   const handleRemoveDocument = (idToRemove: string) => {
     setSelectedDocuments((currentDocs) =>
-      currentDocs.filter((doc) => doc.doc_id !== idToRemove)
+      currentDocs.filter((doc) => doc.doc_id !== idToRemove),
     );
   };
 
   const availableDocuments = documents.filter(
     (doc) =>
       !selectedDocuments.some(
-        (selectedDoc) => selectedDoc.doc_id === doc.doc_id
-      )
+        (selectedDoc) => selectedDoc.doc_id === doc.doc_id,
+      ),
   );
 
   const handleSubmitAnalysis = async () => {
@@ -120,7 +120,9 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
           setShowAnalysis(false);
         } else {
           const errorData = await response.json().catch(() => null);
-          alert(`Failed to Analyse: ${errorData?.message || "Unknown error"}`);
+          toast.error(
+            `Failed to Analyse: ${errorData?.message || "Unknown error"}`,
+          );
           setAnalysis(false);
         }
       } catch (error) {
@@ -167,7 +169,7 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
                         value={doc.title}
                         onSelect={(currentValue) => {
                           setSelectedValue(
-                            currentValue === selectedValue ? "" : currentValue
+                            currentValue === selectedValue ? "" : currentValue,
                           );
                           setOpen(false);
                         }}
@@ -177,7 +179,7 @@ const DocumentAnalysisCard: React.FC<DocCardProps> = ({
                             "mr-2 h-4 w-4",
                             selectedValue === doc.title
                               ? "opacity-100"
-                              : "opacity-0"
+                              : "opacity-0",
                           )}
                         />
                         {doc.title}

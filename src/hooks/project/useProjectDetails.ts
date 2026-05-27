@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 const API_URL = import.meta.env.VITE_SERVER_API_URL;
 
@@ -71,7 +72,9 @@ export const useProjectDetails = (
       setIsEditingTitle(false);
     } catch (err) {
       console.error("Error renaming project:", err);
-      alert("Failed to rename project. Please check if you are the owner.");
+      toast.error(
+        "Failed to rename project. Please check if you are the owner.",
+      );
     }
   };
 

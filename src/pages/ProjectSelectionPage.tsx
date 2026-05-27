@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
@@ -64,7 +69,7 @@ export default function ProjectSelectionPage() {
       const data = await response.json();
       console.log("Projects API response:", data);
       // Handle both array and object wrapper formats to be safe
-      const projectsData = Array.isArray(data) ? data : (data.projects || []);
+      const projectsData = Array.isArray(data) ? data : data.projects || [];
       setProjects(projectsData);
     } catch (err) {
       console.error("Error fetching projects:", err);
@@ -106,7 +111,7 @@ export default function ProjectSelectionPage() {
       navigate(`/project/${newProjectId}`);
     } catch (err) {
       console.error("Error creating project:", err);
-      alert("Failed to create project. Please try again.");
+      toast.error("Failed to create project. Please try again.");
     } finally {
       setIsCreating(false);
     }
@@ -129,7 +134,7 @@ export default function ProjectSelectionPage() {
 
   // Filter projects based on search query
   const filteredProjects = projects.filter((project) =>
-    project.project_name.toLowerCase().includes(searchQuery.toLowerCase())
+    project.project_name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -157,7 +162,10 @@ export default function ProjectSelectionPage() {
                   className="pl-10"
                 />
               </div>
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <Dialog
+                open={isCreateDialogOpen}
+                onOpenChange={setIsCreateDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Button className="gap-2">
                     <Plus className="h-4 w-4" />
@@ -168,7 +176,8 @@ export default function ProjectSelectionPage() {
                   <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
                     <DialogDescription>
-                      Start a new research project. Give it a title and optional description.
+                      Start a new research project. Give it a title and optional
+                      description.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -186,7 +195,6 @@ export default function ProjectSelectionPage() {
                         }}
                       />
                     </div>
-                  
                   </div>
                   <DialogFooter>
                     <Button
@@ -231,7 +239,10 @@ export default function ProjectSelectionPage() {
                     : "Create your first project to get started"}
                 </p>
                 {!searchQuery && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+                  <Button
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="gap-2"
+                  >
                     <Plus className="h-4 w-4" />
                     Create New Project
                   </Button>

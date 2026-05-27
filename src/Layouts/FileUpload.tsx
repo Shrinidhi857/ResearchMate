@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Upload, X, FileText, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,12 +122,12 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         throw new Error(data.error || "Failed to save document");
       }
 
-      alert(`✅ Document "${documentName}" uploaded successfully`);
+      toast.success(`Document "${documentName}" uploaded successfully`);
       setSelectedFile(null);
       setDocumentName("");
     } catch (err: any) {
       console.error(err);
-      alert(`❌ ${err.message || "Failed to save document"}`);
+      toast.error(err.message || "Failed to save document");
     } finally {
       setIsLoading(false);
     }

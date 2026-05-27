@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -31,6 +32,8 @@ export function DocumentList() {
   ]);
   const [selectedDocContent, setSelectedDocContent] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -50,11 +53,16 @@ export function DocumentList() {
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this document?")) return;
+    setDocToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!docToDelete) return;
 
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${API_URL}/api/documents/${id}`, {
+      const response = await fetch(`${API_URL}/api/documents/${docToDelete}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -63,10 +71,13 @@ export function DocumentList() {
       if (!response.ok)
         throw new Error(data.error || "Failed to delete document");
 
-      alert("Document deleted successfully");
-      setDocuments((prev) => prev.filter((doc) => doc.doc_id !== id));
+      toast.success("Document deleted successfully");
+      setDocuments((prev) => prev.filter((doc) => doc.doc_id !== docToDelete));
     } catch {
-      alert(`Error deleting document:`);
+      toast.error(`Error deleting document`);
+    } finally {
+      setDeleteConfirmOpen(false);
+      setDocToDelete(null);
     }
   };
 
@@ -82,7 +93,7 @@ export function DocumentList() {
       setIsDialogOpen(true);
     } catch (err) {
       console.error(err);
-      alert("Error fetching document content");
+      toast.error("Error fetching document content");
     }
   };
 
@@ -125,6 +136,33 @@ export function DocumentList() {
           )}
         </div>
       </ScrollArea>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="w-[90%] max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this document? This action cannot
+              be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="px-4 py-2 rounded-md border border-input bg-background hover:bg-muted text-sm font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 text-sm font-medium"
+            >
+              Delete
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog for viewing document */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

@@ -7,7 +7,9 @@ import {
   MessageCircle,
   FolderKanban,
 } from "lucide-react";
+import { toast } from "sonner";
 import { DocumentList } from "./DocumentList";
+import { TokenProgressBar } from "./TokenProgressBar";
 import tiger from "@/assets/tiger.png";
 import {
   Sidebar,
@@ -33,6 +35,7 @@ interface User {
   email: string;
   first_name: string | null;
   last_name: string | null;
+  tokens: number;
 }
 
 // Menu items.
@@ -106,33 +109,38 @@ export function AppSidebar() {
 
       {/* Footer */}
       <SidebarFooter>
-        <div className="flex items-center gap-2 p-3">
-          <Avatar>
-            <AvatarImage src={tiger} alt="@user" />
-            <AvatarFallback>
-              {user?.first_name ? user.first_name[0].toUpperCase() : "U"}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">
-              {user?.first_name || "Unknown"} {user?.last_name || "User"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {user?.email || "No email"}
-            </span>
+        <div className="space-y-3 p-3 border-t">
+          {user?.tokens !== undefined && (
+            <TokenProgressBar tokens={user.tokens} maxTokens={30000} />
+          )}
+          <div className="flex items-center gap-2">
+            <Avatar>
+              <AvatarImage src={tiger} alt="@user" />
+              <AvatarFallback>
+                {user?.first_name ? user.first_name[0].toUpperCase() : "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col flex-1">
+              <span className="text-sm font-medium">
+                {user?.first_name || "Unknown"} {user?.last_name || "User"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {user?.email || "No email"}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0"
+              aria-label="Logout"
+              onClick={() => {
+                localStorage.removeItem("authToken");
+                window.location.href = "/login";
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="ml-auto"
-            aria-label="Logout"
-            onClick={() => {
-              localStorage.removeItem("authToken");
-              window.location.href = "/login";
-            }}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
         </div>
       </SidebarFooter>
     </Sidebar>

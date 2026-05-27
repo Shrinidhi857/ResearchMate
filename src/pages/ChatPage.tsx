@@ -13,10 +13,10 @@ import * as React from "react";
 import { useSearchParams } from "react-router-dom"; // ✅ Added
 import DocumentAnalysisCard from "../Layouts/DocumentSelectAnalyse";
 import DocumentSelectCard from "../Layouts/DocumentSelectCard";
-// Sample messages - replace with your actual message data
+import { toast } from "sonner";
 const API_URL = import.meta.env.VITE_SERVER_API_URL; // Base URL from .env file
 
-const MessageBubble = ({ message }:any) => {
+const MessageBubble = ({ message }: any) => {
   return (
     <div
       className={`flex w-full mb-4 ${
@@ -39,7 +39,8 @@ const MessageBubble = ({ message }:any) => {
 // ChatPage.tsx
 export default function ChatPage() {
   const [searchParams] = useSearchParams();
-  const projectId = searchParams.get("projectId") || localStorage.getItem("currentProjectId");
+  const projectId =
+    searchParams.get("projectId") || localStorage.getItem("currentProjectId");
   const [messages, setMessages] = React.useState<
     { id: number; text: string; isOutgoing: boolean }[]
   >([]);
@@ -67,9 +68,9 @@ export default function ChatPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           project_id: projectId, // ✅ Added project_id
-          question 
+          question,
         }),
       });
 
@@ -86,9 +87,9 @@ export default function ChatPage() {
     }
   };
 
-  const handleSubmitAnalysis = async (selectedDocuments: any []) => {
+  const handleSubmitAnalysis = async (selectedDocuments: any[]) => {
     if (!projectId) {
-      alert("Please select a project first");
+      toast.warning("Please select a project first");
       return;
     }
 
@@ -102,7 +103,7 @@ export default function ChatPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(selectedDocuments.map(d => d.doc_id)),
+          body: JSON.stringify(selectedDocuments.map((d) => d.doc_id)),
         });
 
         if (response.ok) {
@@ -110,7 +111,7 @@ export default function ChatPage() {
           setShowAnalysis(false);
         } else {
           const err = await response.json().catch(() => null);
-          alert(`Failed to Analyse: ${err?.message || "Unknown error"}`);
+          toast.error(`Failed to Analyse: ${err?.message || "Unknown error"}`);
           setAnalysis(false);
         }
       } catch (error) {
